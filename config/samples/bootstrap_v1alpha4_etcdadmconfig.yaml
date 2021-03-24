@@ -1,0 +1,7 @@
+apiVersion: bootstrap.cluster.x-k8s.io/v1alpha4
+kind: EtcdadmConfig
+metadata:
+  name: etcdadmconfig-sample
+spec:
+  # Add fields here
+  foo: bar
