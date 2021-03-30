@@ -1,0 +1,16 @@
+{
+  "name": "etcdadm-bootstrap",
+  "config": {
+    "image": "mrajashree/etcdadm-bootstrap-provider",
+    "live_reload_deps": [
+      "main.go",
+      "go.mod",
+      "go.sum",
+      "api",
+      "cloudinit",
+      "controllers",
+      "pkg",
+      "exp"
+    ]
+  }
+}

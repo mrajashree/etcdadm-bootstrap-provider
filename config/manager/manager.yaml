@@ -5,6 +5,12 @@ metadata:
     control-plane: controller-manager
   name: system
 ---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: manager
+  namespace: system
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -27,7 +33,7 @@ spec:
         - /manager
         args:
         - --enable-leader-election
-        image: controller:latest
+        image: ${ETCDADM_BOOTSTRAP_IMAGE}
         name: manager
         resources:
           limits:
@@ -37,3 +43,4 @@ spec:
             cpu: 100m
             memory: 20Mi
       terminationGracePeriodSeconds: 10
+      serviceAccountName: manager

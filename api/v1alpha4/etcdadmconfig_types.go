@@ -18,10 +18,14 @@ package v1alpha4
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1alpha4"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+const (
+	DataSecretAvailableCondition clusterv1.ConditionType = "DataSecretAvailable"
+)
 
 // EtcdadmConfigSpec defines the desired state of EtcdadmConfig
 type EtcdadmConfigSpec struct {
@@ -36,6 +40,21 @@ type EtcdadmConfigSpec struct {
 type EtcdadmConfigStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	// Conditions defines current service state of the KubeadmConfig.
+	// +optional
+	Conditions clusterv1.Conditions `json:"conditions,omitempty"`
+
+	DataSecretName *string `json:"dataSecretName"`
+
+	Ready bool `json:"ready"`
+}
+
+func (c *EtcdadmConfig) GetConditions() clusterv1.Conditions {
+	return c.Status.Conditions
+}
+
+func (c *EtcdadmConfig) SetConditions(conditions clusterv1.Conditions) {
+	c.Status.Conditions = conditions
 }
 
 // +kubebuilder:object:root=true
@@ -56,6 +75,14 @@ type EtcdadmConfigList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []EtcdadmConfig `json:"items"`
+}
+
+// +kubebuilder:object:root=true
+
+// EtcdInitConfiguration contains config options for etcdadm init command
+type EtcdInitConfiguration struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
 }
 
 func init() {
