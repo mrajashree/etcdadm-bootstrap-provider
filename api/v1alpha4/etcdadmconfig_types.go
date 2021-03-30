@@ -43,9 +43,9 @@ type EtcdadmConfigStatus struct {
 	// +optional
 	Conditions clusterv1.Conditions `json:"conditions,omitempty"`
 
-	DataSecretName *string `json:"dataSecretName"`
+	DataSecretName *string `json:"dataSecretName,omitempty"`
 
-	Ready bool `json:"ready"`
+	Ready bool `json:"ready,omitempty"`
 }
 
 func (c *EtcdadmConfig) GetConditions() clusterv1.Conditions {

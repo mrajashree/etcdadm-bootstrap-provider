@@ -160,7 +160,7 @@ func (r *EtcdadmConfigReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 			BaseUserData: cloudinit.BaseUserData{
 			//	AdditionalFiles:     files,
 			//	NTP:                 scope.Config.Spec.NTP,
-				PreEtcdadmCommands:  []string{`curl -O https://github.com/kubernetes-sigs/etcdadm/releases/download/v0.1.3/etcdadm-linux-amd64`,
+				PreEtcdadmCommands:  []string{`curl -O https://github.com/kubernetes-sigs/etcdadm/releases/download/v0.1.3/etcdadm-linux-amd64`,`ls etcdadm-linux-amd64`,
 					`chmod +x etcdadm-linux-amd64`, `mv etcdadm-linux-amd64 /usr/local/bin/etcdadm`},
 			//	PostKubeadmCommands: scope.Config.Spec.PostKubeadmCommands,
 			//	Users:               scope.Config.Spec.Users,

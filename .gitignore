@@ -25,3 +25,8 @@ bin
 
 .tiltbuild
 .tiltbuild/manager
+
+bin
+hack/tools/bin
+out
+controller-gen
