@@ -8,7 +8,7 @@ metadata:
   creationTimestamp: null
   name: etcdadmconfigs.bootstrap.cluster.x-k8s.io
   labels:
-    - cluster.x-k8s.io/v1alpha4: v1alpha4
+    cluster.x-k8s.io/v1alpha4: v1alpha4
 spec:
   group: bootstrap.cluster.x-k8s.io
   names:
@@ -74,9 +74,6 @@ spec:
                 type: string
               ready:
                 type: boolean
-            required:
-            - dataSecretName
-            - ready
             type: object
         type: object
     served: true
