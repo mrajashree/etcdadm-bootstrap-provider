@@ -21,7 +21,6 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1alpha4"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 const (
 	DataSecretAvailableCondition clusterv1.ConditionType = "DataSecretAvailable"
@@ -58,7 +57,8 @@ func (c *EtcdadmConfig) SetConditions(conditions clusterv1.Conditions) {
 }
 
 // +kubebuilder:object:root=true
-
+// +kubebuilder:storageversion
+// +kubebuilder:subresource:status
 // EtcdadmConfig is the Schema for the etcdadmconfigs API
 type EtcdadmConfig struct {
 	metav1.TypeMeta   `json:",inline"`

@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"github.com/mrajashree/etcdadm-bootstrap-provider/cloudinit"
 	"github.com/mrajashree/etcdadm-bootstrap-provider/internal/locking"
 	"github.com/pkg/errors"
@@ -29,6 +30,7 @@ import (
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1alpha4"
 	"sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/cluster-api/util/conditions"
+	"sigs.k8s.io/cluster-api/util/patch"
 	"sigs.k8s.io/cluster-api/util/secret"
 	"time"
 
@@ -59,7 +61,7 @@ type EtcdadmConfigReconciler struct {
 // +kubebuilder:rbac:groups=bootstrap.cluster.x-k8s.io,resources=etcdadmconfigs,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=bootstrap.cluster.x-k8s.io,resources=etcdadmconfigs/status,verbs=get;update;patch
 
-func (r *EtcdadmConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res ctrl.Result, rerr error) {
+func (r *EtcdadmConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_ ctrl.Result, rerr error) {
 	log := ctrl.LoggerFrom(ctx)
 
 	// Lookup the etcdadm config
@@ -98,10 +100,43 @@ func (r *EtcdadmConfigReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		log.Error(err, "could not get cluster by machine metadata")
 		return ctrl.Result{}, err
 	}
-	if !cluster.Status.ControlPlaneReady {
+
+	// Initialize the patch helper.
+	patchHelper, err := patch.NewHelper(config, r.Client)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	// Attempt to Patch the KubeadmConfig object and status after each reconciliation if no error occurs.
+	defer func() {
+		// always update the readyCondition; the summary is represented using the "1 of x completed" notation.
+		conditions.SetSummary(config,
+			conditions.WithConditions(
+				bootstrapv1alpha4.DataSecretAvailableCondition,
+			),
+		)
+		// Patch ObservedGeneration only if the reconciliation completed successfully
+		patchOpts := []patch.Option{}
+		if rerr == nil {
+			patchOpts = append(patchOpts, patch.WithStatusObservedGeneration{})
+		}
+		if err := patchHelper.Patch(ctx, config, patchOpts...); err != nil {
+			log.Error(rerr, "Failed to patch config")
+			log.Info(fmt.Sprintf("error from patch call: %v", err))
+			if rerr == nil {
+				rerr = err
+			}
+		}
+	}()
+
+
+	if conditions.IsUnknown(config, bootstrapv1.DataSecretAvailableCondition) {
 		// acquire the init lock so that only the first machine configured
 		// as etcd node gets processed here
 		// if not the first, requeue
+		//log.Info(fmt.Sprintf("is etcdadminit lock nil??: %v", r.EtcdadmInitLock ==nil))
+		//log.Info(fmt.Sprintf("cluster during init lock: %v", cluster))
+		//log.Info(fmt.Sprintf("machine during init lock: %v", machine))
 		if !r.EtcdadmInitLock.Lock(ctx, cluster, machine) {
 			log.Info("An etcd node is already being initialized, requeing until etcd plane is ready")
 			return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
@@ -122,7 +157,7 @@ func (r *EtcdadmConfigReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 			*metav1.NewControllerRef(config, bootstrapv1alpha4.GroupVersion.WithKind("EtcdadmConfig")),
 		)
 
-		cloudInitData, err := cloudinit.NewInitControlPlane(&cloudinit.EtcdPlaneInput{
+		cloudInitData, err := cloudinit.NewInitEtcdPlane(&cloudinit.EtcdPlaneInput{
 			//BaseUserData: cloudinit.BaseUserData{
 			//	AdditionalFiles:     files,
 			//	NTP:                 scope.Config.Spec.NTP,

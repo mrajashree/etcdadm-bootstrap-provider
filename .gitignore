@@ -22,3 +22,6 @@ bin
 *.swp
 *.swo
 *~
+
+.tiltbuild
+.tiltbuild/manager

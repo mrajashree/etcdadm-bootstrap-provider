@@ -8,7 +8,7 @@ metadata:
   creationTimestamp: null
   name: etcdadmconfigs.bootstrap.cluster.x-k8s.io
   labels:
-    cluster.x-k8s.io/v1alpha4: v1alpha4
+    - cluster.x-k8s.io/v1alpha4: v1alpha4
 spec:
   group: bootstrap.cluster.x-k8s.io
   names:
@@ -81,6 +81,8 @@ spec:
         type: object
     served: true
     storage: true
+    subresources:
+      status: {}
 status:
   acceptedNames:
     kind: ""
