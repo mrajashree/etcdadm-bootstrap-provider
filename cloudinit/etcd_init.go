@@ -22,10 +22,11 @@ import (
 
 const (
 	etcdPlaneCloudInit = `{{.Header}}
+{{template "files" .WriteFiles}}
 runcmd:
-{{- template "commands" .PreKubeadmCommands }}
+{{- template "commands" .PreEtcdadmCommands }}
   - 'etcdadm init'
-{{- template "commands" .PostKubeadmCommands }}
+{{- template "commands" .PostEtcdadmCommands }}
 {{- template "ntp" .NTP }}
 {{- template "users" .Users }}
 {{- template "disk_setup" .DiskSetup}}
@@ -49,7 +50,7 @@ func NewInitEtcdPlane(input *EtcdPlaneInput) ([]byte, error) {
 	input.WriteFiles = input.Certificates.AsFiles()
 	input.WriteFiles = append(input.WriteFiles, input.AdditionalFiles...)
 	input.SentinelFileCommand = sentinelFileCommand
-	userData, err := generate("InitControlplane", etcdPlaneCloudInit, input)
+	userData, err := generate("InitEtcdplane", etcdPlaneCloudInit, input)
 	if err != nil {
 		return nil, err
 	}

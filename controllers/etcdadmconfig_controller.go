@@ -129,7 +129,6 @@ func (r *EtcdadmConfigReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		}
 	}()
 
-
 	if conditions.IsUnknown(config, bootstrapv1.DataSecretAvailableCondition) {
 		// acquire the init lock so that only the first machine configured
 		// as etcd node gets processed here
@@ -158,20 +157,22 @@ func (r *EtcdadmConfigReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		)
 
 		cloudInitData, err := cloudinit.NewInitEtcdPlane(&cloudinit.EtcdPlaneInput{
-			//BaseUserData: cloudinit.BaseUserData{
+			BaseUserData: cloudinit.BaseUserData{
 			//	AdditionalFiles:     files,
 			//	NTP:                 scope.Config.Spec.NTP,
-			//	PreKubeadmCommands:  scope.Config.Spec.PreKubeadmCommands,
+				PreEtcdadmCommands:  []string{`curl -O https://github.com/kubernetes-sigs/etcdadm/releases/download/v0.1.3/etcdadm-linux-amd64`,
+					`chmod +x etcdadm-linux-amd64`, `mv etcdadm-linux-amd64 /usr/local/bin/etcdadm`},
 			//	PostKubeadmCommands: scope.Config.Spec.PostKubeadmCommands,
 			//	Users:               scope.Config.Spec.Users,
 			//	Mounts:              scope.Config.Spec.Mounts,
 			//	DiskSetup:           scope.Config.Spec.DiskSetup,
 			//	KubeadmVerbosity:    verbosityFlag,
-			//},
+			},
 			//InitConfiguration:    initdata,
 			//ClusterConfiguration: clusterdata,
 			Certificates: CACerts,
 		})
+		log.Info(fmt.Sprintf("cloudinitdata: %v", cloudInitData))
 
 		if err != nil {
 			log.Error(err, "Failed to generate cloud init for bootstrap control plane")

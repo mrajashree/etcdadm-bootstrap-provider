@@ -37,8 +37,8 @@ func templateYAMLIndent(i int, input string) string {
 // BaseUserData is shared across all the various types of files written to disk.
 type BaseUserData struct {
 	Header               string
-	PreKubeadmCommands   []string
-	PostKubeadmCommands  []string
+	PreEtcdadmCommands   []string
+	PostEtcdadmCommands  []string
 	AdditionalFiles      []bootstrapv1.File
 	WriteFiles           []bootstrapv1.File
 	Users                []bootstrapv1.User
