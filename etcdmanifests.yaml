@@ -12,6 +12,8 @@ spec:
     kind: DockerCluster
     apiVersion: infrastructure.cluster.x-k8s.io/v1alpha4
     name: my-cluster-docker
+  etcdRef:
+    kind: EtcdadmConfig
 ---
 kind: EtcdadmConfig
 apiVersion: bootstrap.cluster.x-k8s.io/v1alpha4
@@ -40,3 +42,61 @@ spec:
     kind: DockerMachine
     apiVersion: infrastructure.cluster.x-k8s.io/v1alpha4
     name: my-etcd-dockermachine1
+---
+
+kind: EtcdadmConfig
+apiVersion: bootstrap.cluster.x-k8s.io/v1alpha4
+metadata:
+  name: my-etcd-config2
+---
+kind: DockerMachine
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha4
+metadata:
+  name: my-etcd-dockermachine2
+---
+kind: Machine
+apiVersion: cluster.x-k8s.io/v1alpha4
+metadata:
+  name: my-machine2
+  labels:
+    cluster.x-k8s.io/cluster-name: my-cluster
+spec:
+  clusterName: my-cluster
+  bootstrap:
+    configRef:
+      kind: EtcdadmConfig
+      apiVersion: bootstrap.cluster.x-k8s.io/v1alpha4
+      name: my-etcd-config2
+  infrastructureRef:
+    kind: DockerMachine
+    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha4
+    name: my-etcd-dockermachine2
+
+---
+kind: EtcdadmConfig
+apiVersion: bootstrap.cluster.x-k8s.io/v1alpha4
+metadata:
+  name: my-etcd-config3
+---
+kind: DockerMachine
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha4
+metadata:
+  name: my-etcd-dockermachine3
+---
+kind: Machine
+apiVersion: cluster.x-k8s.io/v1alpha4
+metadata:
+  name: my-machine3
+  labels:
+    cluster.x-k8s.io/cluster-name: my-cluster
+spec:
+  clusterName: my-cluster
+  bootstrap:
+    configRef:
+      kind: EtcdadmConfig
+      apiVersion: bootstrap.cluster.x-k8s.io/v1alpha4
+      name: my-etcd-config3
+  infrastructureRef:
+    kind: DockerMachine
+    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha4
+    name: my-etcd-dockermachine3

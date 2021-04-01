@@ -19,12 +19,14 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"github.com/go-logr/logr"
 	"github.com/mrajashree/etcdadm-bootstrap-provider/cloudinit"
 	"github.com/mrajashree/etcdadm-bootstrap-provider/internal/locking"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/pointer"
 	"path/filepath"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1alpha4"
@@ -32,12 +34,9 @@ import (
 	"sigs.k8s.io/cluster-api/util/conditions"
 	"sigs.k8s.io/cluster-api/util/patch"
 	"sigs.k8s.io/cluster-api/util/secret"
-	"time"
-
-	"github.com/go-logr/logr"
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"time"
 
 	bootstrapv1alpha4 "github.com/mrajashree/etcdadm-bootstrap-provider/api/v1alpha4"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1alpha4"
@@ -56,6 +55,14 @@ type EtcdadmConfigReconciler struct {
 	Scheme *runtime.Scheme
 
 	EtcdadmInitLock InitLocker
+}
+
+type Scope struct {
+	logr.Logger
+	Config *bootstrapv1alpha4.EtcdadmConfig
+	//ConfigOwner *bsutil.ConfigOwner
+	Cluster *clusterv1.Cluster
+	Machine *clusterv1.Machine
 }
 
 // +kubebuilder:rbac:groups=bootstrap.cluster.x-k8s.io,resources=etcdadmconfigs,verbs=get;list;watch;create;update;patch;delete
@@ -129,59 +136,32 @@ func (r *EtcdadmConfigReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		}
 	}()
 
-	if conditions.IsUnknown(config, bootstrapv1.DataSecretAvailableCondition) {
-		// acquire the init lock so that only the first machine configured
-		// as etcd node gets processed here
-		// if not the first, requeue
-		//log.Info(fmt.Sprintf("is etcdadminit lock nil??: %v", r.EtcdadmInitLock ==nil))
-		//log.Info(fmt.Sprintf("cluster during init lock: %v", cluster))
-		//log.Info(fmt.Sprintf("machine during init lock: %v", machine))
-		if !r.EtcdadmInitLock.Lock(ctx, cluster, machine) {
-			log.Info("An etcd node is already being initialized, requeing until etcd plane is ready")
-			return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
-		}
+	scope := Scope{
+		Logger:  log,
+		Config:  config,
+		Cluster: cluster,
+		Machine: machine,
+	}
 
-		defer func() {
-			if rerr != nil {
-				r.EtcdadmInitLock.Unlock(ctx, cluster)
-			}
-		}()
-		log.Info("Creating BootstrapData for the init etcd plane")
+	etcdInitializedIndication := &corev1.Secret{}
+	err = r.Client.Get(ctx, client.ObjectKey{Namespace: cluster.Namespace, Name: fmt.Sprintf("%v-etcd-initialized", cluster.Name)}, etcdInitializedIndication)
+	if err != nil && apierrors.IsNotFound(err) {
+		// etcd init hasn't been called yet
+		//if !conditions.IsTrue(machine, bootstrapv1.DataSecretAvailableCondition) {
+		//if !conditions.IsTrue(cluster, clusterv1.EtcdInitializedCondition) {
 
-		CACerts := newEtcdCACerts()
-		err = CACerts.LookupOrGenerate(
-			ctx,
-			r.Client,
-			util.ObjectKey(cluster),
-			*metav1.NewControllerRef(config, bootstrapv1alpha4.GroupVersion.WithKind("EtcdadmConfig")),
-		)
-
-		cloudInitData, err := cloudinit.NewInitEtcdPlane(&cloudinit.EtcdPlaneInput{
-			BaseUserData: cloudinit.BaseUserData{
-			//	AdditionalFiles:     files,
-			//	NTP:                 scope.Config.Spec.NTP,
-				PreEtcdadmCommands:  []string{`curl -O -L https://github.com/mrajashree/etcdadm-bootstrap-provider/releases/download/v0.0.0/etcdadm`,
-					`chmod +x etcdadm`,`mv etcdadm /usr/local/bin/etcdadm`},
-			//	PostKubeadmCommands: scope.Config.Spec.PostKubeadmCommands,
-			//	Users:               scope.Config.Spec.Users,
-			//	Mounts:              scope.Config.Spec.Mounts,
-			//	DiskSetup:           scope.Config.Spec.DiskSetup,
-			//	KubeadmVerbosity:    verbosityFlag,
-			},
-			//InitConfiguration:    initdata,
-			//ClusterConfiguration: clusterdata,
-			Certificates: CACerts,
-		})
-		log.Info(fmt.Sprintf("cloudinitdata: %v", cloudInitData))
-
+		res, err := r.initializeEtcd(ctx, &scope)
 		if err != nil {
-			log.Error(err, "Failed to generate cloud init for bootstrap control plane")
-			return ctrl.Result{}, err
+			return res, err
 		}
-		if err := r.storeBootstrapData(ctx, config, cloudInitData, cluster.Name); err != nil {
-			log.Error(err, "Failed to store bootstrap data")
-			return ctrl.Result{}, err
-		}
+	}
+
+	// Unlock any locks that might have been set during init process
+	r.EtcdadmInitLock.Unlock(ctx, cluster)
+
+	res, err := r.joinEtcd(ctx, &scope)
+	if err != nil {
+		return res, err
 	}
 
 	return ctrl.Result{}, nil
@@ -195,6 +175,118 @@ func (r *EtcdadmConfigReconciler) SetupWithManager(ctx context.Context, mgr ctrl
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&bootstrapv1alpha4.EtcdadmConfig{}).
 		Complete(r)
+}
+
+func (r *EtcdadmConfigReconciler) initializeEtcd(ctx context.Context, scope *Scope) (_ ctrl.Result, rerr error) {
+	log := ctrl.LoggerFrom(ctx)
+	// acquire the init lock so that only the first machine configured
+	// as etcd node gets processed here
+	// if not the first, requeue
+	if !r.EtcdadmInitLock.Lock(ctx, scope.Cluster, scope.Machine) {
+		log.Info("An etcd node is already being initialized, requeing until etcd plane is ready")
+		return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+	}
+
+	defer func() {
+		if rerr != nil {
+			r.EtcdadmInitLock.Unlock(ctx, scope.Cluster)
+		}
+	}()
+	log.Info("Creating BootstrapData for the init etcd plane")
+
+	CACerts := newEtcdCACerts()
+	rerr = CACerts.LookupOrGenerate(
+		ctx,
+		r.Client,
+		util.ObjectKey(scope.Cluster),
+		*metav1.NewControllerRef(scope.Config, bootstrapv1alpha4.GroupVersion.WithKind("EtcdadmConfig")),
+	)
+
+	cloudInitData, err := cloudinit.NewInitEtcdPlane(&cloudinit.EtcdPlaneInput{
+		BaseUserData: cloudinit.BaseUserData{
+			PreEtcdadmCommands: []string{`curl -O -L https://github.com/mrajashree/etcdadm-bootstrap-provider/releases/download/v0.0.0/etcdadm`,
+				`chmod +x etcdadm`, `mv etcdadm /usr/local/bin/etcdadm`},
+		},
+		Certificates: CACerts,
+	})
+
+	if err != nil {
+		log.Error(err, "Failed to generate cloud init for bootstrap etcd plane")
+		return ctrl.Result{}, err
+	}
+	if err := r.storeBootstrapData(ctx, scope.Config, cloudInitData, scope.Cluster.Name); err != nil {
+		log.Error(err, "Failed to store bootstrap data")
+		return ctrl.Result{}, err
+	}
+	// temporarily create secret to indicate init commands are run, this will be replaced when etcdInit condition can be updated on the cluster
+	cluster := scope.Cluster
+	err = r.Client.Create(ctx, &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf("%v-etcd-initialized", cluster.Name),
+			Namespace: cluster.Namespace,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: cluster.TypeMeta.APIVersion,
+					Kind:       cluster.TypeMeta.Kind,
+					Name:       cluster.Name,
+					UID:        cluster.UID,
+				},
+			},
+		},
+		Data: map[string][]byte{
+			"etcd": []byte("initialized"),
+		},
+	})
+	if err != nil {
+		if !apierrors.IsAlreadyExists(err) {
+			return ctrl.Result{}, errors.Wrapf(err, "failed to create etcd init secret for first EtcdadmConfig %s/%s", cluster.Namespace, cluster.Name)
+		}
+	}
+	return ctrl.Result{}, nil
+}
+
+func (r *EtcdadmConfigReconciler) joinEtcd(ctx context.Context, scope *Scope) (_ ctrl.Result, rerr error) {
+	log := ctrl.LoggerFrom(ctx)
+	etcdSecretName := fmt.Sprintf("%v-%v", scope.Cluster.Name, "etcd-init")
+	existingSecret := &corev1.Secret{}
+	if err := r.Client.Get(ctx, client.ObjectKey{Namespace: scope.Cluster.Namespace, Name: etcdSecretName}, existingSecret); err != nil {
+		if apierrors.IsNotFound(err) {
+			// this is not an error, just means the first machine didn't get an address yet, reconcile
+			log.Info("Waiting for Machine Controller to set address on init machine and returning error")
+			//r.Client
+			return ctrl.Result{}, err
+		}
+		log.Error(err, "Failed to get secret containing first machine address")
+		return ctrl.Result{}, err
+	}
+	log.Info("Machine Controller has set address on init machine")
+	CACerts := newEtcdCACerts()
+	rerr = CACerts.Lookup(
+		ctx,
+		r.Client,
+		util.ObjectKey(scope.Cluster),
+	)
+
+	initMachineAddress := string(existingSecret.Data["address"])
+	joinAddress := fmt.Sprintf("https://%v:2379", initMachineAddress)
+
+	cloudInitData, err := cloudinit.NewJoinEtcdPlane(&cloudinit.EtcdPlaneJoinInput{
+		BaseUserData: cloudinit.BaseUserData{
+			PreEtcdadmCommands: []string{`curl -O -L https://github.com/mrajashree/etcdadm-bootstrap-provider/releases/download/v0.0.0/etcdadm`,
+				`chmod +x etcdadm`, `mv etcdadm /usr/local/bin/etcdadm`},
+			JoinAddress: joinAddress,
+		},
+		Certificates: CACerts,
+	})
+	if err != nil {
+		log.Error(err, "Failed to generate cloud init for bootstrap etcd plane - join")
+		return ctrl.Result{}, err
+	}
+	if err := r.storeBootstrapData(ctx, scope.Config, cloudInitData, scope.Cluster.Name); err != nil {
+		log.Error(err, "Failed to store bootstrap data - join")
+		return ctrl.Result{}, err
+	}
+	return ctrl.Result{}, nil
 }
 
 func newEtcdCACerts() secret.Certificates {

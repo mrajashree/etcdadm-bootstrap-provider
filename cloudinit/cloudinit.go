@@ -2,6 +2,7 @@ package cloudinit
 
 import (
 	"bytes"
+	"fmt"
 	"strings"
 	"text/template"
 
@@ -47,9 +48,10 @@ type BaseUserData struct {
 	Mounts               []bootstrapv1.MountPoints
 	ControlPlane         bool
 	UseExperimentalRetry bool
-	KubeadmCommand       string
 	KubeadmVerbosity     string
 	SentinelFileCommand  string
+	JoinAddress          string
+	EtcdadmJoinCommand   string
 }
 
 func generate(kind string, tpl string, data interface{}) ([]byte, error) {
@@ -93,4 +95,12 @@ func generate(kind string, tpl string, data interface{}) ([]byte, error) {
 	}
 
 	return out.Bytes(), nil
+}
+
+func (input *BaseUserData) prepare() error {
+	input.Header = cloudConfigHeader
+	input.WriteFiles = append(input.WriteFiles, input.AdditionalFiles...)
+	input.EtcdadmJoinCommand = fmt.Sprintf(standardJoinCommand, input.JoinAddress)
+	input.SentinelFileCommand = sentinelFileCommand
+	return nil
 }
