@@ -1,0 +1,136 @@
+kind: AWSCluster
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha4
+metadata:
+  name: my-cluster-aws
+spec:
+  region: "us-west-2"
+  sshKeyName: "rajashree-capi"
+---
+kind: Cluster
+apiVersion: cluster.x-k8s.io/v1alpha4
+metadata:
+  name: my-cluster
+spec:
+  clusterNetwork:
+    pods:
+      cidrBlocks: [ "192.168.0.0/16" ]
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha4
+    kind: AWSCluster
+    name: my-cluster-aws
+  etcdRef:
+    kind: EtcdadmConfig
+---
+kind: EtcdadmConfig
+apiVersion: bootstrap.cluster.x-k8s.io/v1alpha4
+metadata:
+  name: my-etcd-config1
+---
+kind: AWSMachine
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha4
+metadata:
+  name: ch-etcd-awsmachine1
+spec:
+  iamInstanceProfile: nodes.cluster-api-provider-aws.sigs.k8s.io
+  instanceType: "t3.large"
+  sshKeyName: "rajashree-capi"
+  cloudInit:
+    insecureSkipSecretsManager: true
+  ami:
+    id: ami-089eee1b1f14aaf44
+---
+kind: Machine
+apiVersion: cluster.x-k8s.io/v1alpha4
+metadata:
+  name: my-machine1
+  labels:
+    cluster.x-k8s.io/cluster-name: my-cluster
+    cluster.x-k8s.io/etcd-plane: ""
+spec:
+  clusterName: my-cluster
+  bootstrap:
+    configRef:
+      kind: EtcdadmConfig
+      apiVersion: bootstrap.cluster.x-k8s.io/v1alpha4
+      name: my-etcd-config1
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha4
+    kind: AWSMachine
+    name: ch-etcd-awsmachine1
+---
+
+kind: EtcdadmConfig
+apiVersion: bootstrap.cluster.x-k8s.io/v1alpha4
+metadata:
+  name: my-etcd-config2
+---
+kind: AWSMachine
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha4
+metadata:
+  name: ch-etcd-awsmachine2
+spec:
+  iamInstanceProfile: nodes.cluster-api-provider-aws.sigs.k8s.io
+  instanceType: "t3.large"
+  sshKeyName: "rajashree-capi"
+  cloudInit:
+    insecureSkipSecretsManager: true
+  ami:
+    id: ami-089eee1b1f14aaf44
+---
+kind: Machine
+apiVersion: cluster.x-k8s.io/v1alpha4
+metadata:
+  name: my-machine2
+  labels:
+    cluster.x-k8s.io/cluster-name: my-cluster
+    cluster.x-k8s.io/etcd-plane: ""
+spec:
+  clusterName: my-cluster
+  bootstrap:
+    configRef:
+      kind: EtcdadmConfig
+      apiVersion: bootstrap.cluster.x-k8s.io/v1alpha4
+      name: my-etcd-config2
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha4
+    kind: AWSMachine
+    name: ch-etcd-awsmachine2
+---
+
+kind: EtcdadmConfig
+apiVersion: bootstrap.cluster.x-k8s.io/v1alpha4
+metadata:
+  name: my-etcd-config3
+---
+kind: AWSMachine
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha4
+metadata:
+  name: ch-etcd-awsmachine3
+spec:
+  iamInstanceProfile: nodes.cluster-api-provider-aws.sigs.k8s.io
+  instanceType: "t3.large"
+  sshKeyName: "rajashree-capi"
+  cloudInit:
+    insecureSkipSecretsManager: true
+  ami:
+    id: ami-089eee1b1f14aaf44
+---
+kind: Machine
+apiVersion: cluster.x-k8s.io/v1alpha4
+metadata:
+  name: my-machine3
+  labels:
+    cluster.x-k8s.io/cluster-name: my-cluster
+    cluster.x-k8s.io/etcd-plane: ""
+spec:
+  clusterName: my-cluster
+  bootstrap:
+    configRef:
+      kind: EtcdadmConfig
+      apiVersion: bootstrap.cluster.x-k8s.io/v1alpha4
+      name: my-etcd-config3
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha4
+    kind: AWSMachine
+    name: ch-etcd-awsmachine3
+---
