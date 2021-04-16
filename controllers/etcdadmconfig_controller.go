@@ -48,6 +48,9 @@ type InitLocker interface {
 	Unlock(ctx context.Context, cluster *clusterv1.Cluster) bool
 }
 
+var installEtcdadmCommands = []string{`curl -O -L https://github.com/mrajashree/etcdadm-bootstrap-provider/releases/download/v0.0.0/etcdadm`,
+	`chmod +x etcdadm`, `mv etcdadm /usr/local/bin/etcdadm`}
+
 // EtcdadmConfigReconciler reconciles a EtcdadmConfig object
 type EtcdadmConfigReconciler struct {
 	client.Client
@@ -143,19 +146,9 @@ func (r *EtcdadmConfigReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		Machine: machine,
 	}
 
-	etcdInitializedIndication := &corev1.Secret{}
-	err = r.Client.Get(ctx, client.ObjectKey{Namespace: cluster.Namespace, Name: fmt.Sprintf("%v-etcd-initialized", cluster.Name)}, etcdInitializedIndication)
-	if err != nil && apierrors.IsNotFound(err) {
-		// etcd init hasn't been called yet
-		//if !conditions.IsTrue(machine, bootstrapv1.DataSecretAvailableCondition) {
-		//if !conditions.IsTrue(cluster, clusterv1.EtcdInitializedCondition) {
-
-		res, err := r.initializeEtcd(ctx, &scope)
-		if err != nil {
-			return res, err
-		}
+	if !conditions.IsTrue(cluster, clusterv1.ManagedExternalEtcdClusterInitializedCondition) {
+		return r.initializeEtcd(ctx, &scope)
 	}
-
 	// Unlock any locks that might have been set during init process
 	r.EtcdadmInitLock.Unlock(ctx, cluster)
 
@@ -194,20 +187,18 @@ func (r *EtcdadmConfigReconciler) initializeEtcd(ctx context.Context, scope *Sco
 	}()
 	log.Info("Creating BootstrapData for the init etcd plane")
 
-	CACerts := newEtcdCACerts()
-	rerr = CACerts.LookupOrGenerate(
+	CACertKeyPair := etcdCACertKeyPair()
+	rerr = CACertKeyPair.Lookup(
 		ctx,
 		r.Client,
 		util.ObjectKey(scope.Cluster),
-		*metav1.NewControllerRef(scope.Config, bootstrapv1alpha4.GroupVersion.WithKind("EtcdadmConfig")),
 	)
 
 	cloudInitData, err := cloudinit.NewInitEtcdPlane(&cloudinit.EtcdPlaneInput{
 		BaseUserData: cloudinit.BaseUserData{
-			PreEtcdadmCommands: []string{`curl -O -L https://github.com/mrajashree/etcdadm-bootstrap-provider/releases/download/v0.0.0/etcdadm`,
-				`chmod +x etcdadm`, `mv etcdadm /usr/local/bin/etcdadm`},
+			PreEtcdadmCommands: installEtcdadmCommands,
 		},
-		Certificates: CACerts,
+		Certificates: CACertKeyPair,
 	})
 
 	if err != nil {
@@ -217,30 +208,6 @@ func (r *EtcdadmConfigReconciler) initializeEtcd(ctx context.Context, scope *Sco
 	if err := r.storeBootstrapData(ctx, scope.Config, cloudInitData, scope.Cluster.Name); err != nil {
 		log.Error(err, "Failed to store bootstrap data")
 		return ctrl.Result{}, err
-	}
-	// temporarily create secret to indicate init commands are run, this will be replaced when etcdInit condition can be updated on the cluster
-	cluster := scope.Cluster
-	err = r.Client.Create(ctx, &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%v-etcd-initialized", cluster.Name),
-			Namespace: cluster.Namespace,
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion: cluster.TypeMeta.APIVersion,
-					Kind:       cluster.TypeMeta.Kind,
-					Name:       cluster.Name,
-					UID:        cluster.UID,
-				},
-			},
-		},
-		Data: map[string][]byte{
-			"etcd": []byte("initialized"),
-		},
-	})
-	if err != nil {
-		if !apierrors.IsAlreadyExists(err) {
-			return ctrl.Result{}, errors.Wrapf(err, "failed to create etcd init secret for first EtcdadmConfig %s/%s", cluster.Namespace, cluster.Name)
-		}
 	}
 	return ctrl.Result{}, nil
 }
@@ -253,15 +220,14 @@ func (r *EtcdadmConfigReconciler) joinEtcd(ctx context.Context, scope *Scope) (_
 		if apierrors.IsNotFound(err) {
 			// this is not an error, just means the first machine didn't get an address yet, reconcile
 			log.Info("Waiting for Machine Controller to set address on init machine and returning error")
-			//r.Client
 			return ctrl.Result{}, err
 		}
 		log.Error(err, "Failed to get secret containing first machine address")
 		return ctrl.Result{}, err
 	}
 	log.Info("Machine Controller has set address on init machine")
-	CACerts := newEtcdCACerts()
-	rerr = CACerts.Lookup(
+	etcdCerts := etcdCACertKeyPair()
+	rerr = etcdCerts.Lookup(
 		ctx,
 		r.Client,
 		util.ObjectKey(scope.Cluster),
@@ -272,11 +238,10 @@ func (r *EtcdadmConfigReconciler) joinEtcd(ctx context.Context, scope *Scope) (_
 
 	cloudInitData, err := cloudinit.NewJoinEtcdPlane(&cloudinit.EtcdPlaneJoinInput{
 		BaseUserData: cloudinit.BaseUserData{
-			PreEtcdadmCommands: []string{`curl -O -L https://github.com/mrajashree/etcdadm-bootstrap-provider/releases/download/v0.0.0/etcdadm`,
-				`chmod +x etcdadm`, `mv etcdadm /usr/local/bin/etcdadm`},
+			PreEtcdadmCommands: installEtcdadmCommands,
 			JoinAddress: joinAddress,
 		},
-		Certificates: CACerts,
+		Certificates: etcdCerts,
 	})
 	if err != nil {
 		log.Error(err, "Failed to generate cloud init for bootstrap etcd plane - join")
@@ -289,11 +254,11 @@ func (r *EtcdadmConfigReconciler) joinEtcd(ctx context.Context, scope *Scope) (_
 	return ctrl.Result{}, nil
 }
 
-func newEtcdCACerts() secret.Certificates {
+func etcdCACertKeyPair() secret.Certificates {
 	certificatesDir := "/etc/etcd/pki"
 	certificates := secret.Certificates{
 		&secret.Certificate{
-			Purpose:  "etcd",
+			Purpose:  secret.ManagedExternalEtcdCA,
 			CertFile: filepath.Join(certificatesDir, "ca.crt"),
 			KeyFile:  filepath.Join(certificatesDir, "ca.key"),
 		},
@@ -307,7 +272,7 @@ func newEtcdCACerts() secret.Certificates {
 func (r *EtcdadmConfigReconciler) storeBootstrapData(ctx context.Context, config *bootstrapv1alpha4.EtcdadmConfig, data []byte, clusterName string) error {
 	log := ctrl.LoggerFrom(ctx)
 
-	secret := &corev1.Secret{
+	se := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      config.Name,
 			Namespace: config.Namespace,
@@ -332,16 +297,16 @@ func (r *EtcdadmConfigReconciler) storeBootstrapData(ctx context.Context, config
 
 	// as secret creation and scope.Config status patch are not atomic operations
 	// it is possible that secret creation happens but the config.Status patches are not applied
-	if err := r.Client.Create(ctx, secret); err != nil {
+	if err := r.Client.Create(ctx, se); err != nil {
 		if !apierrors.IsAlreadyExists(err) {
 			return errors.Wrapf(err, "failed to create bootstrap data secret for EtcdadmConfig %s/%s", config.Namespace, config.Name)
 		}
 		log.Info("bootstrap data secret for EtcdadmConfig already exists, updating", "secret", secret.Name, "EtcdadmConfig", config.Name)
-		if err := r.Client.Update(ctx, secret); err != nil {
+		if err := r.Client.Update(ctx, se); err != nil {
 			return errors.Wrapf(err, "failed to update bootstrap data secret for EtcdadmConfig %s/%s", config.Namespace, config.Name)
 		}
 	}
-	config.Status.DataSecretName = pointer.StringPtr(secret.Name)
+	config.Status.DataSecretName = pointer.StringPtr(se.Name)
 	config.Status.Ready = true
 	conditions.MarkTrue(config, bootstrapv1.DataSecretAvailableCondition)
 	return nil
