@@ -30,3 +30,5 @@ bin
 hack/tools/bin
 out
 controller-gen
+
+testcmd/

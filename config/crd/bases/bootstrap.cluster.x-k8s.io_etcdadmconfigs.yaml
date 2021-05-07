@@ -32,9 +32,62 @@ spec:
           spec:
             description: EtcdadmConfigSpec defines the desired state of EtcdadmConfig
             properties:
-              foo:
-                description: Foo is an example field of EtcdadmConfig. Edit EtcdadmConfig_types.go to remove/update
+              dnsRecord:
                 type: string
+              postEtcdadmCommands:
+                description: PostEtcdadmCommands specifies extra commands to run after kubeadm runs
+                items:
+                  type: string
+                type: array
+              preEtcdadmCommands:
+                description: PreEtcdadmCommands specifies extra commands to run before kubeadm runs
+                items:
+                  type: string
+                type: array
+              users:
+                description: Users specifies extra users to add
+                items:
+                  description: User defines the input for a generated user in cloud-init.
+                  properties:
+                    gecos:
+                      description: Gecos specifies the gecos to use for the user
+                      type: string
+                    groups:
+                      description: Groups specifies the additional groups for the user
+                      type: string
+                    homeDir:
+                      description: HomeDir specifies the home directory to use for the user
+                      type: string
+                    inactive:
+                      description: Inactive specifies whether to mark the user as inactive
+                      type: boolean
+                    lockPassword:
+                      description: LockPassword specifies if password login should be disabled
+                      type: boolean
+                    name:
+                      description: Name specifies the user name
+                      type: string
+                    passwd:
+                      description: Passwd specifies a hashed password for the user
+                      type: string
+                    primaryGroup:
+                      description: PrimaryGroup specifies the primary group for the user
+                      type: string
+                    shell:
+                      description: Shell specifies the user's shell
+                      type: string
+                    sshAuthorizedKeys:
+                      description: SSHAuthorizedKeys specifies a list of ssh authorized keys for the user
+                      items:
+                        type: string
+                      type: array
+                    sudo:
+                      description: Sudo specifies a sudo role for the user
+                      type: string
+                  required:
+                  - name
+                  type: object
+                type: array
             type: object
           status:
             description: EtcdadmConfigStatus defines the observed state of EtcdadmConfig

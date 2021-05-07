@@ -19,6 +19,7 @@ package v1alpha4
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1alpha4"
+	capbk "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1alpha4"
 )
 
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
@@ -31,8 +32,17 @@ type EtcdadmConfigSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of EtcdadmConfig. Edit EtcdadmConfig_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	DNSRecord string `json:"dnsRecord,omitempty"`
+	// Users specifies extra users to add
+	// +optional
+	Users []capbk.User `json:"users,omitempty"`
+	// PreEtcdadmCommands specifies extra commands to run before kubeadm runs
+	// +optional
+	PreEtcdadmCommands []string `json:"preEtcdadmCommands,omitempty"`
+
+	// PostEtcdadmCommands specifies extra commands to run after kubeadm runs
+	// +optional
+	PostEtcdadmCommands []string `json:"postEtcdadmCommands,omitempty"`
 }
 
 // EtcdadmConfigStatus defines the observed state of EtcdadmConfig

@@ -196,7 +196,8 @@ func (r *EtcdadmConfigReconciler) initializeEtcd(ctx context.Context, scope *Sco
 
 	cloudInitData, err := cloudinit.NewInitEtcdPlane(&cloudinit.EtcdPlaneInput{
 		BaseUserData: cloudinit.BaseUserData{
-			PreEtcdadmCommands: installEtcdadmCommands,
+			PreEtcdadmCommands: append(scope.Config.Spec.PreEtcdadmCommands,installEtcdadmCommands...),
+			Users: scope.Config.Spec.Users,
 		},
 		Certificates: CACertKeyPair,
 	})
@@ -238,7 +239,8 @@ func (r *EtcdadmConfigReconciler) joinEtcd(ctx context.Context, scope *Scope) (_
 
 	cloudInitData, err := cloudinit.NewJoinEtcdPlane(&cloudinit.EtcdPlaneJoinInput{
 		BaseUserData: cloudinit.BaseUserData{
-			PreEtcdadmCommands: installEtcdadmCommands,
+			PreEtcdadmCommands: append(scope.Config.Spec.PreEtcdadmCommands,installEtcdadmCommands...),
+			Users: scope.Config.Spec.Users,
 			JoinAddress: joinAddress,
 		},
 		Certificates: etcdCerts,
