@@ -86,6 +86,8 @@ spec:
                   - name
                   type: object
                 type: array
+              version:
+                type: string
             type: object
           status:
             description: EtcdadmConfigStatus defines the observed state of EtcdadmConfig
@@ -123,8 +125,6 @@ spec:
                 type: string
               ready:
                 type: boolean
-              version:
-                type: string
             type: object
         type: object
     served: true

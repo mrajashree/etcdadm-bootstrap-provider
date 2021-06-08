@@ -45,6 +45,9 @@ type EtcdadmConfigSpec struct {
 
 	// +optional
 	//EtcdadmArgs map[string]interface{} `json:"etcdadmArgs,omitempty"`
+
+	// +optional
+	Version string `json:"version,omitempty"`
 }
 
 // EtcdadmConfigStatus defines the observed state of EtcdadmConfig
@@ -58,8 +61,6 @@ type EtcdadmConfigStatus struct {
 	DataSecretName *string `json:"dataSecretName,omitempty"`
 
 	Ready bool `json:"ready,omitempty"`
-
-	Version string `json:"version,omitempty"`
 }
 
 func (c *EtcdadmConfig) GetConditions() clusterv1.Conditions {
