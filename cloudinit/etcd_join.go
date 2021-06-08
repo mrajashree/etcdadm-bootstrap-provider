@@ -29,15 +29,17 @@ runcmd:
 type EtcdPlaneJoinInput struct {
 	BaseUserData
 	secret.Certificates
-	BootstrapToken    string
-	JoinConfiguration string
+
+	EtcdadmJoinCommand string
+	JoinAddress string
+	Version string
 }
 
 // NewJoinControlPlane returns the user data string to be used on a new control plane instance.
 func NewJoinEtcdPlane(input *EtcdPlaneJoinInput) ([]byte, error) {
 	input.WriteFiles = input.Certificates.AsFiles()
 	input.ControlPlane = true
-	input.EtcdadmJoinCommand = fmt.Sprintf(standardJoinCommand, input.JoinAddress)
+	input.EtcdadmJoinCommand = addEtcdadmJoinFlags(input, fmt.Sprintf(standardJoinCommand, input.JoinAddress))
 	if err := input.prepare(); err != nil {
 		return nil, err
 	}
@@ -47,4 +49,11 @@ func NewJoinEtcdPlane(input *EtcdPlaneJoinInput) ([]byte, error) {
 	}
 
 	return userData, err
+}
+
+func addEtcdadmJoinFlags(input *EtcdPlaneJoinInput, cmd string) string {
+	if input.Version != "" {
+		cmd += fmt.Sprintf("--version %s", input.Version)
+	}
+	return cmd
 }

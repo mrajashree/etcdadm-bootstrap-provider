@@ -200,6 +200,7 @@ func (r *EtcdadmConfigReconciler) initializeEtcd(ctx context.Context, scope *Sco
 			PreEtcdadmCommands: append(scope.Config.Spec.PreEtcdadmCommands,installEtcdadmCommands...),
 			Users: scope.Config.Spec.Users,
 		},
+		Version: scope.Config.Spec.Version,
 		Certificates: CACertKeyPair,
 	})
 
@@ -242,8 +243,9 @@ func (r *EtcdadmConfigReconciler) joinEtcd(ctx context.Context, scope *Scope) (_
 		BaseUserData: cloudinit.BaseUserData{
 			PreEtcdadmCommands: append(scope.Config.Spec.PreEtcdadmCommands,installEtcdadmCommands...),
 			Users: scope.Config.Spec.Users,
-			JoinAddress: joinAddress,
 		},
+		JoinAddress: joinAddress,
+		Version: scope.Config.Spec.Version,
 		Certificates: etcdCerts,
 	})
 	if err != nil {

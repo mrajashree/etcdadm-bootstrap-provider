@@ -47,11 +47,7 @@ type BaseUserData struct {
 	DiskSetup            *bootstrapv1.DiskSetup
 	Mounts               []bootstrapv1.MountPoints
 	ControlPlane         bool
-	UseExperimentalRetry bool
-	KubeadmVerbosity     string
 	SentinelFileCommand  string
-	JoinAddress          string
-	EtcdadmJoinCommand   string
 }
 
 func generate(kind string, tpl string, data interface{}) ([]byte, error) {

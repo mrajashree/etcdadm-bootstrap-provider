@@ -17,6 +17,7 @@ limitations under the License.
 package cloudinit
 
 import (
+	"fmt"
 	"sigs.k8s.io/cluster-api/util/secret"
 )
 
@@ -44,8 +45,8 @@ type EtcdPlaneInput struct {
 	BaseUserData
 	secret.Certificates
 
-	ClusterConfiguration string
-	InitConfiguration    string
+	InitCommand string
+	Version string
 }
 
 // NewInitControlPlane returns the user data string to be used on a controlplane instance.
@@ -54,10 +55,18 @@ func NewInitEtcdPlane(input *EtcdPlaneInput) ([]byte, error) {
 	input.WriteFiles = input.Certificates.AsFiles()
 	input.WriteFiles = append(input.WriteFiles, input.AdditionalFiles...)
 	input.SentinelFileCommand = sentinelFileCommand
+	input.InitCommand = addEtcdadmInitFlags(input, standardInitCommand)
 	userData, err := generate("InitEtcdplane", etcdPlaneCloudInit, input)
 	if err != nil {
 		return nil, err
 	}
 
 	return userData, nil
+}
+
+func addEtcdadmInitFlags(input *EtcdPlaneInput, cmd string) string {
+	if input.Version != "" {
+		cmd += fmt.Sprintf("--version %s", input.Version)
+	}
+	return cmd
 }
