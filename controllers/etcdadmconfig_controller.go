@@ -188,11 +188,12 @@ func (r *EtcdadmConfigReconciler) initializeEtcd(ctx context.Context, scope *Sco
 	log.Info("Creating BootstrapData for the init etcd plane")
 
 	CACertKeyPair := etcdCACertKeyPair()
-	rerr = CACertKeyPair.Lookup(
+	rerr = CACertKeyPair.LookupOrGenerate(
 		ctx,
 		r.Client,
 		util.ObjectKey(scope.Cluster),
-	)
+		*metav1.NewControllerRef(scope.Config, bootstrapv1alpha4.GroupVersion.WithKind("EtcdadmConfig")),
+		)
 
 	cloudInitData, err := cloudinit.NewInitEtcdPlane(&cloudinit.EtcdPlaneInput{
 		BaseUserData: cloudinit.BaseUserData{

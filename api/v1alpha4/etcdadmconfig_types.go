@@ -32,7 +32,6 @@ type EtcdadmConfigSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	DNSRecord string `json:"dnsRecord,omitempty"`
 	// Users specifies extra users to add
 	// +optional
 	Users []capbk.User `json:"users,omitempty"`
@@ -43,6 +42,9 @@ type EtcdadmConfigSpec struct {
 	// PostEtcdadmCommands specifies extra commands to run after kubeadm runs
 	// +optional
 	PostEtcdadmCommands []string `json:"postEtcdadmCommands,omitempty"`
+
+	// +optional
+	//EtcdadmArgs map[string]interface{} `json:"etcdadmArgs,omitempty"`
 }
 
 // EtcdadmConfigStatus defines the observed state of EtcdadmConfig
@@ -56,6 +58,8 @@ type EtcdadmConfigStatus struct {
 	DataSecretName *string `json:"dataSecretName,omitempty"`
 
 	Ready bool `json:"ready,omitempty"`
+
+	Version string `json:"version,omitempty"`
 }
 
 func (c *EtcdadmConfig) GetConditions() clusterv1.Conditions {

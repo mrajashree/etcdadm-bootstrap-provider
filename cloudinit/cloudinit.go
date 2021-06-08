@@ -2,7 +2,6 @@ package cloudinit
 
 import (
 	"bytes"
-	"fmt"
 	"strings"
 	"text/template"
 
@@ -11,6 +10,7 @@ import (
 )
 
 const (
+	standardInitCommand = "etcdadm init"
 	standardJoinCommand = "etcdadm join %s"
 	// sentinelFileCommand writes a file to /run/cluster-api to signal successful Kubernetes bootstrapping in a way that
 	// works both for Linux and Windows OS.
@@ -100,7 +100,7 @@ func generate(kind string, tpl string, data interface{}) ([]byte, error) {
 func (input *BaseUserData) prepare() error {
 	input.Header = cloudConfigHeader
 	input.WriteFiles = append(input.WriteFiles, input.AdditionalFiles...)
-	input.EtcdadmJoinCommand = fmt.Sprintf(standardJoinCommand, input.JoinAddress)
+	//input.EtcdadmJoinCommand = fmt.Sprintf(standardJoinCommand, input.JoinAddress)
 	input.SentinelFileCommand = sentinelFileCommand
 	return nil
 }

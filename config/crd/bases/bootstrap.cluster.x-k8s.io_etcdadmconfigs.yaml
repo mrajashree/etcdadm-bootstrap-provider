@@ -32,8 +32,6 @@ spec:
           spec:
             description: EtcdadmConfigSpec defines the desired state of EtcdadmConfig
             properties:
-              dnsRecord:
-                type: string
               postEtcdadmCommands:
                 description: PostEtcdadmCommands specifies extra commands to run after kubeadm runs
                 items:
@@ -125,6 +123,8 @@ spec:
                 type: string
               ready:
                 type: boolean
+              version:
+                type: string
             type: object
         type: object
     served: true

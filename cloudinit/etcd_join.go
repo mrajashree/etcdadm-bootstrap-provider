@@ -1,6 +1,7 @@
 package cloudinit
 
 import (
+	"fmt"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/cluster-api/util/secret"
 )
@@ -36,6 +37,7 @@ type EtcdPlaneJoinInput struct {
 func NewJoinEtcdPlane(input *EtcdPlaneJoinInput) ([]byte, error) {
 	input.WriteFiles = input.Certificates.AsFiles()
 	input.ControlPlane = true
+	input.EtcdadmJoinCommand = fmt.Sprintf(standardJoinCommand, input.JoinAddress)
 	if err := input.prepare(); err != nil {
 		return nil, err
 	}
