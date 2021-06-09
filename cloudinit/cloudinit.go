@@ -15,9 +15,6 @@ const (
 	// sentinelFileCommand writes a file to /run/cluster-api to signal successful Kubernetes bootstrapping in a way that
 	// works both for Linux and Windows OS.
 	sentinelFileCommand            = "echo success > /run/cluster-api/bootstrap-success.complete"
-	retriableJoinScriptName        = "/usr/local/bin/kubeadm-bootstrap-script"
-	retriableJoinScriptOwner       = "root"
-	retriableJoinScriptPermissions = "0755"
 	cloudConfigHeader              = `## template: jinja
 #cloud-config
 `
@@ -37,17 +34,17 @@ func templateYAMLIndent(i int, input string) string {
 
 // BaseUserData is shared across all the various types of files written to disk.
 type BaseUserData struct {
-	Header               string
-	PreEtcdadmCommands   []string
-	PostEtcdadmCommands  []string
-	AdditionalFiles      []bootstrapv1.File
-	WriteFiles           []bootstrapv1.File
-	Users                []bootstrapv1.User
-	NTP                  *bootstrapv1.NTP
-	DiskSetup            *bootstrapv1.DiskSetup
-	Mounts               []bootstrapv1.MountPoints
-	ControlPlane         bool
-	SentinelFileCommand  string
+	Header              string
+	PreEtcdadmCommands  []string
+	PostEtcdadmCommands []string
+	AdditionalFiles     []bootstrapv1.File
+	WriteFiles          []bootstrapv1.File
+	Users               []bootstrapv1.User
+	NTP                 *bootstrapv1.NTP
+	DiskSetup           *bootstrapv1.DiskSetup
+	Mounts              []bootstrapv1.MountPoints
+	ControlPlane        bool
+	SentinelFileCommand string
 }
 
 func generate(kind string, tpl string, data interface{}) ([]byte, error) {
@@ -96,7 +93,6 @@ func generate(kind string, tpl string, data interface{}) ([]byte, error) {
 func (input *BaseUserData) prepare() error {
 	input.Header = cloudConfigHeader
 	input.WriteFiles = append(input.WriteFiles, input.AdditionalFiles...)
-	//input.EtcdadmJoinCommand = fmt.Sprintf(standardJoinCommand, input.JoinAddress)
 	input.SentinelFileCommand = sentinelFileCommand
 	return nil
 }
