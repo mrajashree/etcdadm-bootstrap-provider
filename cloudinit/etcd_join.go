@@ -53,7 +53,7 @@ func NewJoinEtcdPlane(input *EtcdPlaneJoinInput) ([]byte, error) {
 
 func addEtcdadmJoinFlags(input *EtcdPlaneJoinInput, cmd string) string {
 	if input.Version != "" {
-		cmd += fmt.Sprintf("--version %s", input.Version)
+		cmd += fmt.Sprintf(" --version %s", input.Version)
 	}
 	return cmd
 }

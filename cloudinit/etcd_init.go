@@ -30,7 +30,7 @@ const (
     content: "This placeholder file is used to create the /run/cluster-api sub directory in a way that is compatible with both Linux and Windows (mkdir -p /run/cluster-api does not work with Windows)"
 runcmd:
 {{- template "commands" .PreEtcdadmCommands }}
-  - 'etcdadm init && {{ .SentinelFileCommand }}'
+  - {{ .EtcdadmInitCommand }} && {{ .SentinelFileCommand }}
 {{- template "commands" .PostEtcdadmCommands }}
 {{- template "ntp" .NTP }}
 {{- template "users" .Users }}
@@ -45,7 +45,7 @@ type EtcdPlaneInput struct {
 	BaseUserData
 	secret.Certificates
 
-	InitCommand string
+	EtcdadmInitCommand string
 	Version string
 }
 
@@ -55,7 +55,7 @@ func NewInitEtcdPlane(input *EtcdPlaneInput) ([]byte, error) {
 	input.WriteFiles = input.Certificates.AsFiles()
 	input.WriteFiles = append(input.WriteFiles, input.AdditionalFiles...)
 	input.SentinelFileCommand = sentinelFileCommand
-	input.InitCommand = addEtcdadmInitFlags(input, standardInitCommand)
+	input.EtcdadmInitCommand = addEtcdadmInitFlags(input, standardInitCommand)
 	userData, err := generate("InitEtcdplane", etcdPlaneCloudInit, input)
 	if err != nil {
 		return nil, err
@@ -66,7 +66,7 @@ func NewInitEtcdPlane(input *EtcdPlaneInput) ([]byte, error) {
 
 func addEtcdadmInitFlags(input *EtcdPlaneInput, cmd string) string {
 	if input.Version != "" {
-		cmd += fmt.Sprintf("--version %s", input.Version)
+		cmd += fmt.Sprintf(" --version %s", input.Version)
 	}
 	return cmd
 }
