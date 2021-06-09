@@ -31,8 +31,8 @@ type EtcdPlaneJoinInput struct {
 	secret.Certificates
 
 	EtcdadmJoinCommand string
-	JoinAddress string
-	Version string
+	JoinAddress        string
+	Version            string
 }
 
 // NewJoinControlPlane returns the user data string to be used on a new control plane instance.
