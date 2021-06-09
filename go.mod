@@ -13,7 +13,6 @@ require (
 	k8s.io/utils v0.0.0-20210305010621-2afb4311ab10
 	sigs.k8s.io/cluster-api v0.3.11-0.20210329151847-96ab9172b7c1
 	sigs.k8s.io/controller-runtime v0.9.0-alpha.1
-	sigs.k8s.io/etcdadm v0.1.3
 )
 
-replace sigs.k8s.io/cluster-api => github.com/mrajashree/cluster-api v0.3.11-0.20210423184405-86ec2ba62332
+replace sigs.k8s.io/cluster-api => github.com/mrajashree/cluster-api v0.3.11-0.20210426220346-18c42c47d024
