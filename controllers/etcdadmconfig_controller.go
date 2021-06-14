@@ -63,7 +63,7 @@ type EtcdadmConfigReconciler struct {
 
 type Scope struct {
 	logr.Logger
-	Config *bootstrapv1alpha4.EtcdadmConfig
+	Config  *bootstrapv1alpha4.EtcdadmConfig
 	Cluster *clusterv1.Cluster
 	Machine *clusterv1.Machine
 }

@@ -14,8 +14,8 @@ const (
 	standardJoinCommand = "etcdadm join %s"
 	// sentinelFileCommand writes a file to /run/cluster-api to signal successful Kubernetes bootstrapping in a way that
 	// works both for Linux and Windows OS.
-	sentinelFileCommand            = "echo success > /run/cluster-api/bootstrap-success.complete"
-	cloudConfigHeader              = `## template: jinja
+	sentinelFileCommand = "echo success > /run/cluster-api/bootstrap-success.complete"
+	cloudConfigHeader   = `## template: jinja
 #cloud-config
 `
 )
