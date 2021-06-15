@@ -71,8 +71,9 @@ type Scope struct {
 // +kubebuilder:rbac:groups=bootstrap.cluster.x-k8s.io,resources=etcdadmconfigs,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=bootstrap.cluster.x-k8s.io,resources=etcdadmconfigs/status,verbs=get;update;patch
 
-func (r *EtcdadmConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_ ctrl.Result, rerr error) {
-	log := ctrl.LoggerFrom(ctx)
+func (r *EtcdadmConfigReconciler) Reconcile(req ctrl.Request) (_ ctrl.Result, rerr error) {
+	ctx := context.Background()
+	log := r.Log.WithValues("etcdadmconfig", req.Name, "namespace", req.Namespace)
 
 	// Lookup the etcdadm config
 	config := &bootstrapv1alpha3.EtcdadmConfig{}
@@ -160,9 +161,9 @@ func (r *EtcdadmConfigReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	return ctrl.Result{}, nil
 }
 
-func (r *EtcdadmConfigReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
+func (r *EtcdadmConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	if r.EtcdadmInitLock == nil {
-		r.EtcdadmInitLock = locking.NewEtcdadmInitMutex(ctrl.LoggerFrom(ctx).WithName("etcd-init-locker"), mgr.GetClient())
+		r.EtcdadmInitLock = locking.NewEtcdadmInitMutex(r.Log.WithName("etcd-init-locker"), mgr.GetClient())
 	}
 
 	return ctrl.NewControllerManagedBy(mgr).
@@ -171,7 +172,7 @@ func (r *EtcdadmConfigReconciler) SetupWithManager(ctx context.Context, mgr ctrl
 }
 
 func (r *EtcdadmConfigReconciler) initializeEtcd(ctx context.Context, scope *Scope) (_ ctrl.Result, rerr error) {
-	log := ctrl.LoggerFrom(ctx)
+	log := r.Log
 	// acquire the init lock so that only the first machine configured as etcd node gets processed here
 	// if not the first, requeue
 	if !r.EtcdadmInitLock.Lock(ctx, scope.Cluster, scope.Machine) {
@@ -215,7 +216,7 @@ func (r *EtcdadmConfigReconciler) initializeEtcd(ctx context.Context, scope *Sco
 }
 
 func (r *EtcdadmConfigReconciler) joinEtcd(ctx context.Context, scope *Scope) (_ ctrl.Result, rerr error) {
-	log := ctrl.LoggerFrom(ctx)
+	log := r.Log
 	etcdSecretName := fmt.Sprintf("%v-%v", scope.Cluster.Name, "etcd-init")
 	existingSecret := &corev1.Secret{}
 	if err := r.Client.Get(ctx, client.ObjectKey{Namespace: scope.Cluster.Namespace, Name: etcdSecretName}, existingSecret); err != nil {
@@ -275,7 +276,7 @@ func etcdCACertKeyPair() secret.Certificates {
 // storeBootstrapData creates a new secret with the data passed in as input,
 // sets the reference in the configuration status and ready to true.
 func (r *EtcdadmConfigReconciler) storeBootstrapData(ctx context.Context, config *bootstrapv1alpha3.EtcdadmConfig, data []byte, clusterName string) error {
-	log := ctrl.LoggerFrom(ctx)
+	log := r.Log
 
 	se := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
