@@ -16,7 +16,7 @@ spec:
     singular: etcdadmconfig
   scope: Namespaced
   versions:
-  - name: v1alpha4
+  - name: v1alpha3
     schema:
       openAPIV3Schema:
         description: EtcdadmConfig is the Schema for the etcdadmconfigs API

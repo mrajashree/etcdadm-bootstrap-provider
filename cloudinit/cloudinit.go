@@ -6,7 +6,7 @@ import (
 	"text/template"
 
 	"github.com/pkg/errors"
-	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1alpha4"
+	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1alpha3"
 )
 
 const (
@@ -14,8 +14,8 @@ const (
 	standardJoinCommand = "etcdadm join %s"
 	// sentinelFileCommand writes a file to /run/cluster-api to signal successful Kubernetes bootstrapping in a way that
 	// works both for Linux and Windows OS.
-	sentinelFileCommand            = "echo success > /run/cluster-api/bootstrap-success.complete"
-	cloudConfigHeader              = `## template: jinja
+	sentinelFileCommand = "echo success > /run/cluster-api/bootstrap-success.complete"
+	cloudConfigHeader   = `## template: jinja
 #cloud-config
 `
 )

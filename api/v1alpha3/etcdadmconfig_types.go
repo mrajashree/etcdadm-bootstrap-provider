@@ -14,13 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha4
+package v1alpha3
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1alpha4"
-	capbk "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1alpha4"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1alpha3"
+	capbk "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1alpha3"
 )
+// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 const (
@@ -90,14 +91,6 @@ type EtcdadmConfigList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []EtcdadmConfig `json:"items"`
-}
-
-// +kubebuilder:object:root=true
-
-// EtcdInitConfiguration contains config options for etcdadm init command
-type EtcdInitConfiguration struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
 }
 
 func init() {

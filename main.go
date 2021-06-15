@@ -26,9 +26,10 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	bootstrapv1alpha4 "github.com/mrajashree/etcdadm-bootstrap-provider/api/v1alpha4"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1alpha3"
+
+	bootstrapv1alpha3 "github.com/mrajashree/etcdadm-bootstrap-provider/api/v1alpha3"
 	"github.com/mrajashree/etcdadm-bootstrap-provider/controllers"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1alpha4"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -40,8 +41,8 @@ var (
 func init() {
 	_ = clientgoscheme.AddToScheme(scheme)
 
-	_ = bootstrapv1alpha4.AddToScheme(scheme)
 	_ = clusterv1.AddToScheme(scheme)
+	_ = bootstrapv1alpha3.AddToScheme(scheme)
 	// +kubebuilder:scaffold:scheme
 }
 
