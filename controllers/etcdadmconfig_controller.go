@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -31,15 +32,18 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/pointer"
-	"path/filepath"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1alpha3"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1alpha3"
 	"sigs.k8s.io/cluster-api/util"
+	"sigs.k8s.io/cluster-api/util/annotations"
 	"sigs.k8s.io/cluster-api/util/conditions"
 	"sigs.k8s.io/cluster-api/util/patch"
+	"sigs.k8s.io/cluster-api/util/predicates"
 	"sigs.k8s.io/cluster-api/util/secret"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 // InitLocker is a lock that is used around etcdadm init
@@ -68,6 +72,39 @@ type Scope struct {
 	Machine *clusterv1.Machine
 }
 
+func (r *EtcdadmConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	if r.EtcdadmInitLock == nil {
+		r.EtcdadmInitLock = locking.NewEtcdadmInitMutex(r.Log.WithName("etcd-init-locker"), mgr.GetClient())
+	}
+
+	b := ctrl.NewControllerManagedBy(mgr).
+		For(&bootstrapv1alpha3.EtcdadmConfig{}).
+		WithEventFilter(predicates.ResourceNotPaused(r.Log)).
+		Watches(
+			&source.Kind{Type: &clusterv1.Machine{}},
+			&handler.EnqueueRequestsFromMapFunc{
+				ToRequests: handler.ToRequestsFunc(r.MachineToBootstrapMapFunc),
+			},
+		)
+
+	c, err := b.Build(r)
+	if err != nil {
+		return errors.Wrap(err, "failed setting up with a controller manager")
+	}
+
+	err = c.Watch(
+		&source.Kind{Type: &clusterv1.Cluster{}},
+		&handler.EnqueueRequestsFromMapFunc{
+			ToRequests: handler.ToRequestsFunc(r.ClusterToEtcdadmConfigs),
+		},
+		predicates.ClusterUnpausedAndInfrastructureReady(r.Log),
+	)
+	if err != nil {
+		return errors.Wrap(err, "failed adding Watch for Clusters to controller manager")
+	}
+	return nil
+}
+
 // +kubebuilder:rbac:groups=bootstrap.cluster.x-k8s.io,resources=etcdadmconfigs,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=bootstrap.cluster.x-k8s.io,resources=etcdadmconfigs/status,verbs=get;update;patch
 
@@ -76,8 +113,8 @@ func (r *EtcdadmConfigReconciler) Reconcile(req ctrl.Request) (_ ctrl.Result, re
 	log := r.Log.WithValues("etcdadmconfig", req.Name, "namespace", req.Namespace)
 
 	// Lookup the etcdadm config
-	config := &bootstrapv1alpha3.EtcdadmConfig{}
-	if err := r.Client.Get(ctx, req.NamespacedName, config); err != nil {
+	etcdadmConfig := &bootstrapv1alpha3.EtcdadmConfig{}
+	if err := r.Client.Get(ctx, req.NamespacedName, etcdadmConfig); err != nil {
 		if apierrors.IsNotFound(err) {
 			return ctrl.Result{}, nil
 		}
@@ -86,9 +123,13 @@ func (r *EtcdadmConfigReconciler) Reconcile(req ctrl.Request) (_ ctrl.Result, re
 	}
 
 	// Look up the Machine associated with this EtcdadmConfig resource
-	machine, err := util.GetOwnerMachine(ctx, r.Client, config.ObjectMeta)
+	machine, err := util.GetOwnerMachine(ctx, r.Client, etcdadmConfig.ObjectMeta)
 	if err != nil {
-		log.Error(err, "could not get owner machine")
+		if apierrors.IsNotFound(err) {
+			// could not find owning machine, reconcile when owner is set
+			return ctrl.Result{}, nil
+		}
+		log.Error(err, "could not get owner machine for the EtcdadmConfig")
 		return ctrl.Result{}, err
 	}
 	if machine == nil {
@@ -103,25 +144,28 @@ func (r *EtcdadmConfigReconciler) Reconcile(req ctrl.Request) (_ ctrl.Result, re
 			log.Info("Machine does not belong to a cluster yet, waiting until its part of a cluster")
 			return ctrl.Result{}, nil
 		}
-
 		if apierrors.IsNotFound(err) {
-			log.Info("Cluster does not exist yet , waiting until it is created")
+			log.Info("Cluster does not exist yet, waiting until it is created")
 			return ctrl.Result{}, nil
 		}
 		log.Error(err, "could not get cluster by machine metadata")
 		return ctrl.Result{}, err
 	}
 
+	if annotations.IsPaused(cluster, etcdadmConfig) {
+		log.Info("Reconciliation is paused for this object")
+		return ctrl.Result{}, nil
+	}
 	// Initialize the patch helper.
-	patchHelper, err := patch.NewHelper(config, r.Client)
+	patchHelper, err := patch.NewHelper(etcdadmConfig, r.Client)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	// Attempt to Patch the KubeadmConfig object and status after each reconciliation if no error occurs.
+	// Attempt to Patch the EtcdadmConfig object and status after each reconciliation if no error occurs.
 	defer func() {
 		// always update the readyCondition; the summary is represented using the "1 of x completed" notation.
-		conditions.SetSummary(config,
+		conditions.SetSummary(etcdadmConfig,
 			conditions.WithConditions(
 				bootstrapv1alpha3.DataSecretAvailableCondition,
 			),
@@ -131,18 +175,21 @@ func (r *EtcdadmConfigReconciler) Reconcile(req ctrl.Request) (_ ctrl.Result, re
 		if rerr == nil {
 			patchOpts = append(patchOpts, patch.WithStatusObservedGeneration{})
 		}
-		if err := patchHelper.Patch(ctx, config, patchOpts...); err != nil {
-			log.Error(rerr, "Failed to patch config")
-			log.Info(fmt.Sprintf("error from patch call: %v", err))
+		if err := patchHelper.Patch(ctx, etcdadmConfig, patchOpts...); err != nil {
+			log.Error(err, "Failed to patch etcdadmConfig")
 			if rerr == nil {
 				rerr = err
 			}
 		}
 	}()
 
+	if etcdadmConfig.Status.Ready {
+		return ctrl.Result{}, nil
+	}
+
 	scope := Scope{
 		Logger:  log,
-		Config:  config,
+		Config:  etcdadmConfig,
 		Cluster: cluster,
 		Machine: machine,
 	}
@@ -159,16 +206,6 @@ func (r *EtcdadmConfigReconciler) Reconcile(req ctrl.Request) (_ ctrl.Result, re
 	}
 
 	return ctrl.Result{}, nil
-}
-
-func (r *EtcdadmConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	if r.EtcdadmInitLock == nil {
-		r.EtcdadmInitLock = locking.NewEtcdadmInitMutex(r.Log.WithName("etcd-init-locker"), mgr.GetClient())
-	}
-
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&bootstrapv1alpha3.EtcdadmConfig{}).
-		Complete(r)
 }
 
 func (r *EtcdadmConfigReconciler) initializeEtcd(ctx context.Context, scope *Scope) (_ ctrl.Result, rerr error) {

@@ -4,7 +4,6 @@ go 1.13
 
 require (
 	github.com/go-logr/logr v0.1.0
-	github.com/onsi/ginkgo v1.12.1
 	github.com/onsi/gomega v1.10.1
 	github.com/pkg/errors v0.9.1
 	k8s.io/api v0.17.9
@@ -15,4 +14,4 @@ require (
 	sigs.k8s.io/controller-runtime v0.5.14
 )
 
-replace sigs.k8s.io/cluster-api => github.com/mrajashree/cluster-api v0.3.15-0.20210617050028-b245a1bf8d60
+replace sigs.k8s.io/cluster-api => github.com/mrajashree/cluster-api v0.3.15-0.20210628013015-b0f10426fca7

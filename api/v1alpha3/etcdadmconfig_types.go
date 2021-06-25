@@ -21,8 +21,6 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1alpha3"
 	capbk "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1alpha3"
 )
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 const (
 	DataSecretAvailableCondition clusterv1.ConditionType = "DataSecretAvailable"
@@ -30,9 +28,6 @@ const (
 
 // EtcdadmConfigSpec defines the desired state of EtcdadmConfig
 type EtcdadmConfigSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
 	// Users specifies extra users to add
 	// +optional
 	Users []capbk.User `json:"users,omitempty"`
@@ -53,8 +48,6 @@ type EtcdadmConfigSpec struct {
 
 // EtcdadmConfigStatus defines the observed state of EtcdadmConfig
 type EtcdadmConfigStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
 	// Conditions defines current service state of the KubeadmConfig.
 	// +optional
 	Conditions clusterv1.Conditions `json:"conditions,omitempty"`
