@@ -40,10 +40,14 @@ type EtcdadmConfigSpec struct {
 	PostEtcdadmCommands []string `json:"postEtcdadmCommands,omitempty"`
 
 	// +optional
-	//EtcdadmArgs map[string]interface{} `json:"etcdadmArgs,omitempty"`
+	Version string `json:"version,omitempty"`
+
+	// EtcdReleaseURL is an optional field to specify where etcdadm can download etcd from
+	// +optional
+	EtcdReleaseURL string `json:"etcdReleaseURL,omitempty"`
 
 	// +optional
-	Version string `json:"version,omitempty"`
+	//EtcdadmArgs map[string]interface{} `json:"etcdadmArgs,omitempty"`
 }
 
 // EtcdadmConfigStatus defines the observed state of EtcdadmConfig

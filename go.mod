@@ -14,4 +14,4 @@ require (
 	sigs.k8s.io/controller-runtime v0.5.14
 )
 
-replace sigs.k8s.io/cluster-api => github.com/mrajashree/cluster-api v0.3.15-0.20210628013015-b0f10426fca7
+replace sigs.k8s.io/cluster-api => github.com/mrajashree/cluster-api v0.3.15-0.20210628204721-ba54587a0e97

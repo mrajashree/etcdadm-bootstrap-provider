@@ -32,6 +32,9 @@ spec:
           spec:
             description: EtcdadmConfigSpec defines the desired state of EtcdadmConfig
             properties:
+              etcdReleaseURL:
+                description: EtcdReleaseURL is an optional field to specify where etcdadm can download etcd from
+                type: string
               postEtcdadmCommands:
                 description: PostEtcdadmCommands specifies extra commands to run after kubeadm runs
                 items:
@@ -93,7 +96,7 @@ spec:
             description: EtcdadmConfigStatus defines the observed state of EtcdadmConfig
             properties:
               conditions:
-                description: 'INSERT ADDITIONAL STATUS FIELD - define observed state of cluster Important: Run "make" to regenerate code after modifying this file Conditions defines current service state of the KubeadmConfig.'
+                description: Conditions defines current service state of the KubeadmConfig.
                 items:
                   description: Condition defines an observation of a Cluster API resource operational state.
                   properties:

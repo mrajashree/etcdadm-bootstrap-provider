@@ -29,6 +29,7 @@ runcmd:
 type EtcdPlaneJoinInput struct {
 	BaseUserData
 	secret.Certificates
+	EtcdadmArgs
 
 	EtcdadmJoinCommand string
 	JoinAddress        string
@@ -39,7 +40,7 @@ type EtcdPlaneJoinInput struct {
 func NewJoinEtcdPlane(input *EtcdPlaneJoinInput) ([]byte, error) {
 	input.WriteFiles = input.Certificates.AsFiles()
 	input.ControlPlane = true
-	input.EtcdadmJoinCommand = addEtcdadmJoinFlags(input, fmt.Sprintf(standardJoinCommand, input.JoinAddress))
+	input.EtcdadmJoinCommand = addEtcdadmFlags(&input.EtcdadmArgs, fmt.Sprintf(standardJoinCommand, input.JoinAddress))
 	if err := input.prepare(); err != nil {
 		return nil, err
 	}
@@ -49,11 +50,4 @@ func NewJoinEtcdPlane(input *EtcdPlaneJoinInput) ([]byte, error) {
 	}
 
 	return userData, err
-}
-
-func addEtcdadmJoinFlags(input *EtcdPlaneJoinInput, cmd string) string {
-	if input.Version != "" {
-		cmd += fmt.Sprintf(" --version %s", input.Version)
-	}
-	return cmd
 }
