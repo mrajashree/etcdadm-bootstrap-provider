@@ -232,22 +232,22 @@ func (r *EtcdadmConfigReconciler) initializeEtcd(ctx context.Context, scope *Sco
 		*metav1.NewControllerRef(scope.Config, bootstrapv1alpha3.GroupVersion.WithKind("EtcdadmConfig")),
 	)
 
-	if len(scope.Config.Spec.EtcdadmInstallCommands) > 0 {
-		scope.Config.Spec.PreEtcdadmCommands = append(scope.Config.Spec.PreEtcdadmCommands, scope.Config.Spec.EtcdadmInstallCommands...)
-	} else {
-		scope.Config.Spec.PreEtcdadmCommands = append(scope.Config.Spec.PreEtcdadmCommands, defaultEtcdadmInstallCommands...)
-	}
-	cloudInitData, err := cloudinit.NewInitEtcdPlane(&cloudinit.EtcdPlaneInput{
+	initInput := cloudinit.EtcdPlaneInput{
 		BaseUserData: cloudinit.BaseUserData{
-			PreEtcdadmCommands: append(scope.Config.Spec.PreEtcdadmCommands),
-			Users:              scope.Config.Spec.Users,
+			Users: scope.Config.Spec.Users,
 		},
 		EtcdadmArgs: cloudinit.EtcdadmArgs{
 			Version:        scope.Config.Spec.Version,
 			EtcdReleaseURL: scope.Config.Spec.EtcdReleaseURL,
 		},
 		Certificates: CACertKeyPair,
-	})
+	}
+	if len(scope.Config.Spec.EtcdadmInstallCommands) > 0 {
+		initInput.PreEtcdadmCommands = append(scope.Config.Spec.PreEtcdadmCommands, scope.Config.Spec.EtcdadmInstallCommands...)
+	} else {
+		initInput.PreEtcdadmCommands = append(scope.Config.Spec.PreEtcdadmCommands, defaultEtcdadmInstallCommands...)
+	}
+	cloudInitData, err := cloudinit.NewInitEtcdPlane(&initInput)
 
 	if err != nil {
 		log.Error(err, "Failed to generate cloud init for initializing etcd plane")
@@ -285,15 +285,9 @@ func (r *EtcdadmConfigReconciler) joinEtcd(ctx context.Context, scope *Scope) (_
 	initMachineAddress := string(existingSecret.Data["address"])
 	joinAddress := fmt.Sprintf("https://%v:2379", initMachineAddress)
 
-	if len(scope.Config.Spec.EtcdadmInstallCommands) > 0 {
-		scope.Config.Spec.PreEtcdadmCommands = append(scope.Config.Spec.PreEtcdadmCommands, scope.Config.Spec.EtcdadmInstallCommands...)
-	} else {
-		scope.Config.Spec.PreEtcdadmCommands = append(scope.Config.Spec.PreEtcdadmCommands, defaultEtcdadmInstallCommands...)
-	}
-	cloudInitData, err := cloudinit.NewJoinEtcdPlane(&cloudinit.EtcdPlaneJoinInput{
+	joinInput := cloudinit.EtcdPlaneJoinInput{
 		BaseUserData: cloudinit.BaseUserData{
-			PreEtcdadmCommands: append(scope.Config.Spec.PreEtcdadmCommands, installEtcdadmCommands...),
-			Users:              scope.Config.Spec.Users,
+			Users: scope.Config.Spec.Users,
 		},
 		JoinAddress: joinAddress,
 		EtcdadmArgs: cloudinit.EtcdadmArgs{
@@ -301,7 +295,13 @@ func (r *EtcdadmConfigReconciler) joinEtcd(ctx context.Context, scope *Scope) (_
 			EtcdReleaseURL: scope.Config.Spec.EtcdReleaseURL,
 		},
 		Certificates: etcdCerts,
-	})
+	}
+	if len(scope.Config.Spec.EtcdadmInstallCommands) > 0 {
+		joinInput.PreEtcdadmCommands = append(scope.Config.Spec.PreEtcdadmCommands, scope.Config.Spec.EtcdadmInstallCommands...)
+	} else {
+		joinInput.PreEtcdadmCommands = append(scope.Config.Spec.PreEtcdadmCommands, defaultEtcdadmInstallCommands...)
+	}
+	cloudInitData, err := cloudinit.NewJoinEtcdPlane(&joinInput)
 	if err != nil {
 		log.Error(err, "Failed to generate cloud init for bootstrap etcd plane - join")
 		return ctrl.Result{}, err
