@@ -21,6 +21,7 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1alpha3"
 	capbk "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1alpha3"
 )
+
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 const (
 	DataSecretAvailableCondition clusterv1.ConditionType = "DataSecretAvailable"
@@ -31,6 +32,10 @@ type EtcdadmConfigSpec struct {
 	// Users specifies extra users to add
 	// +optional
 	Users []capbk.User `json:"users,omitempty"`
+
+	// +optional
+	EtcdadmInstallCommands []string `json:"etcdadmInstallCommands,omitempty"`
+
 	// PreEtcdadmCommands specifies extra commands to run before kubeadm runs
 	// +optional
 	PreEtcdadmCommands []string `json:"preEtcdadmCommands,omitempty"`

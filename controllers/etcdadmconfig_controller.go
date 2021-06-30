@@ -53,8 +53,8 @@ type InitLocker interface {
 }
 
 // TODO: replace with etcdadm release
-var installEtcdadmCommands = []string{`curl -O -L https://github.com/mrajashree/etcdadm-bootstrap-provider/releases/download/v0.0.0/etcdadm`,
-	`chmod +x etcdadm`, `mv etcdadm /usr/local/bin/etcdadm`}
+var installEtcdadmCommands = []string{`chmod +x etcdadm`, `mv etcdadm /usr/local/bin/etcdadm`}
+var defaultEtcdadmInstallCommands = []string{`curl -OL https://github.com/mrajashree/etcdadm-bootstrap-provider/releases/download/v0.0.0/etcdadm`, `chmod +x etcdadm`, `mv etcdadm /usr/local/bin/etcdadm`}
 
 // EtcdadmConfigReconciler reconciles a EtcdadmConfig object
 type EtcdadmConfigReconciler struct {
@@ -232,9 +232,14 @@ func (r *EtcdadmConfigReconciler) initializeEtcd(ctx context.Context, scope *Sco
 		*metav1.NewControllerRef(scope.Config, bootstrapv1alpha3.GroupVersion.WithKind("EtcdadmConfig")),
 	)
 
+	if len(scope.Config.Spec.EtcdadmInstallCommands) > 0 {
+		scope.Config.Spec.PreEtcdadmCommands = append(scope.Config.Spec.PreEtcdadmCommands, scope.Config.Spec.EtcdadmInstallCommands...)
+	} else {
+		scope.Config.Spec.PreEtcdadmCommands = append(scope.Config.Spec.PreEtcdadmCommands, defaultEtcdadmInstallCommands...)
+	}
 	cloudInitData, err := cloudinit.NewInitEtcdPlane(&cloudinit.EtcdPlaneInput{
 		BaseUserData: cloudinit.BaseUserData{
-			PreEtcdadmCommands: append(scope.Config.Spec.PreEtcdadmCommands, installEtcdadmCommands...),
+			PreEtcdadmCommands: append(scope.Config.Spec.PreEtcdadmCommands),
 			Users:              scope.Config.Spec.Users,
 		},
 		EtcdadmArgs: cloudinit.EtcdadmArgs{
@@ -280,6 +285,11 @@ func (r *EtcdadmConfigReconciler) joinEtcd(ctx context.Context, scope *Scope) (_
 	initMachineAddress := string(existingSecret.Data["address"])
 	joinAddress := fmt.Sprintf("https://%v:2379", initMachineAddress)
 
+	if len(scope.Config.Spec.EtcdadmInstallCommands) > 0 {
+		scope.Config.Spec.PreEtcdadmCommands = append(scope.Config.Spec.PreEtcdadmCommands, scope.Config.Spec.EtcdadmInstallCommands...)
+	} else {
+		scope.Config.Spec.PreEtcdadmCommands = append(scope.Config.Spec.PreEtcdadmCommands, defaultEtcdadmInstallCommands...)
+	}
 	cloudInitData, err := cloudinit.NewJoinEtcdPlane(&cloudinit.EtcdPlaneJoinInput{
 		BaseUserData: cloudinit.BaseUserData{
 			PreEtcdadmCommands: append(scope.Config.Spec.PreEtcdadmCommands, installEtcdadmCommands...),
