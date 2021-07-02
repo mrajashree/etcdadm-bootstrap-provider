@@ -95,6 +95,11 @@ func (in *EtcdadmConfigSpec) DeepCopyInto(out *EtcdadmConfigSpec) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
+	if in.EtcdadmInstallCommands != nil {
+		in, out := &in.EtcdadmInstallCommands, &out.EtcdadmInstallCommands
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	if in.PreEtcdadmCommands != nil {
 		in, out := &in.PreEtcdadmCommands, &out.PreEtcdadmCommands
 		*out = make([]string, len(*in))
