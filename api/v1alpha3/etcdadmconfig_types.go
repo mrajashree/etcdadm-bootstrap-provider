@@ -34,6 +34,9 @@ type EtcdadmConfigSpec struct {
 	Users []capbk.User `json:"users,omitempty"`
 
 	// +optional
+	EtcdadmBuiltin bool `json:"etcdadmBuiltin,omitempty"`
+
+	// +optional
 	EtcdadmInstallCommands []string `json:"etcdadmInstallCommands,omitempty"`
 
 	// PreEtcdadmCommands specifies extra commands to run before kubeadm runs

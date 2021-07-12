@@ -189,8 +189,8 @@ func TestEtcdadmConfigReconciler_InitializeEtcdIfInitLockIsNotAquired(t *testing
 	myclient := helpers.NewFakeClientWithScheme(setupScheme(), objects...)
 
 	k := &EtcdadmConfigReconciler{
-		Log:    log.Log,
-		Client: myclient,
+		Log:             log.Log,
+		Client:          myclient,
 		EtcdadmInitLock: &etcdInitLocker{},
 	}
 	request := ctrl.Request{
@@ -227,8 +227,8 @@ func TestEtcdadmConfigReconciler_RequeueIfInitLockIsAquired(t *testing.T) {
 	myclient := helpers.NewFakeClientWithScheme(setupScheme(), objects...)
 
 	k := &EtcdadmConfigReconciler{
-		Log:    log.Log,
-		Client: myclient,
+		Log:             log.Log,
+		Client:          myclient,
 		EtcdadmInitLock: &etcdInitLocker{locked: true},
 	}
 	request := ctrl.Request{
@@ -261,8 +261,8 @@ func TestEtcdadmConfigReconciler_JoinMemberIfEtcdIsInitialized(t *testing.T) {
 	myclient := helpers.NewFakeClientWithScheme(setupScheme(), objects...)
 
 	k := &EtcdadmConfigReconciler{
-		Log:    log.Log,
-		Client: myclient,
+		Log:             log.Log,
+		Client:          myclient,
 		EtcdadmInitLock: &etcdInitLocker{},
 	}
 	request := ctrl.Request{
@@ -328,16 +328,15 @@ func newMachine(cluster *clusterv1.Cluster, name string) *clusterv1.Machine {
 	return machine
 }
 
-
 // newEtcdadmConfig generates an EtcdadmConfig object for the external etcd cluster
 func newEtcdadmConfig(machine *clusterv1.Machine, name string) *bootstrapv1alpha3.EtcdadmConfig {
 	config := &bootstrapv1alpha3.EtcdadmConfig{
 		TypeMeta: metav1.TypeMeta{
-			Kind: "EtcdadmConfig",
+			Kind:       "EtcdadmConfig",
 			APIVersion: bootstrapv1alpha3.GroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name:      name,
 			Namespace: "default",
 		},
 	}
@@ -345,9 +344,9 @@ func newEtcdadmConfig(machine *clusterv1.Machine, name string) *bootstrapv1alpha
 	if machine != nil {
 		config.ObjectMeta.OwnerReferences = []metav1.OwnerReference{
 			{
-				Kind: "Machine",
+				Kind:       "Machine",
 				APIVersion: clusterv1.GroupVersion.String(),
-				Name: machine.Name,
+				Name:       machine.Name,
 			},
 		}
 		machine.Spec.Bootstrap.ConfigRef.Name = config.Name

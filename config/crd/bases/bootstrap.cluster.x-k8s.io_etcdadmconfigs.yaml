@@ -40,6 +40,8 @@ spec:
                 description: EtcdReleaseURL is an optional field to specify where
                   etcdadm can download etcd from
                 type: string
+              etcdadmBuiltin:
+                type: boolean
               etcdadmInstallCommands:
                 items:
                   type: string

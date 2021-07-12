@@ -53,7 +53,6 @@ type InitLocker interface {
 }
 
 // TODO: replace with etcdadm release
-var installEtcdadmCommands = []string{`chmod +x etcdadm`, `mv etcdadm /usr/local/bin/etcdadm`}
 var defaultEtcdadmInstallCommands = []string{`curl -OL https://github.com/mrajashree/etcdadm-bootstrap-provider/releases/download/v0.0.0/etcdadm`, `chmod +x etcdadm`, `mv etcdadm /usr/local/bin/etcdadm`}
 
 // EtcdadmConfigReconciler reconciles a EtcdadmConfig object
@@ -242,11 +241,15 @@ func (r *EtcdadmConfigReconciler) initializeEtcd(ctx context.Context, scope *Sco
 		},
 		Certificates: CACertKeyPair,
 	}
-	if len(scope.Config.Spec.EtcdadmInstallCommands) > 0 {
-		initInput.PreEtcdadmCommands = append(scope.Config.Spec.PreEtcdadmCommands, scope.Config.Spec.EtcdadmInstallCommands...)
-	} else {
-		initInput.PreEtcdadmCommands = append(scope.Config.Spec.PreEtcdadmCommands, defaultEtcdadmInstallCommands...)
+	// only do this if etcdadm not baked in image
+	if !scope.Config.Spec.EtcdadmBuiltin {
+		if len(scope.Config.Spec.EtcdadmInstallCommands) > 0 {
+			initInput.PreEtcdadmCommands = append(scope.Config.Spec.PreEtcdadmCommands, scope.Config.Spec.EtcdadmInstallCommands...)
+		} else {
+			initInput.PreEtcdadmCommands = append(scope.Config.Spec.PreEtcdadmCommands, defaultEtcdadmInstallCommands...)
+		}
 	}
+
 	cloudInitData, err := cloudinit.NewInitEtcdPlane(&initInput)
 
 	if err != nil {
@@ -296,11 +299,15 @@ func (r *EtcdadmConfigReconciler) joinEtcd(ctx context.Context, scope *Scope) (_
 		},
 		Certificates: etcdCerts,
 	}
-	if len(scope.Config.Spec.EtcdadmInstallCommands) > 0 {
-		joinInput.PreEtcdadmCommands = append(scope.Config.Spec.PreEtcdadmCommands, scope.Config.Spec.EtcdadmInstallCommands...)
-	} else {
-		joinInput.PreEtcdadmCommands = append(scope.Config.Spec.PreEtcdadmCommands, defaultEtcdadmInstallCommands...)
+
+	if !scope.Config.Spec.EtcdadmBuiltin {
+		if len(scope.Config.Spec.EtcdadmInstallCommands) > 0 {
+			joinInput.PreEtcdadmCommands = append(scope.Config.Spec.PreEtcdadmCommands, scope.Config.Spec.EtcdadmInstallCommands...)
+		} else {
+			joinInput.PreEtcdadmCommands = append(scope.Config.Spec.PreEtcdadmCommands, defaultEtcdadmInstallCommands...)
+		}
 	}
+
 	cloudInitData, err := cloudinit.NewJoinEtcdPlane(&joinInput)
 	if err != nil {
 		log.Error(err, "Failed to generate cloud init for bootstrap etcd plane - join")
