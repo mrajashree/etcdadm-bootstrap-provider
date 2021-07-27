@@ -2,8 +2,9 @@ package cloudinit
 
 import (
 	"fmt"
+
+	"github.com/mrajashree/etcdadm-bootstrap-provider/pkg/userdata"
 	"github.com/pkg/errors"
-	"sigs.k8s.io/cluster-api/util/secret"
 )
 
 const (
@@ -25,23 +26,12 @@ runcmd:
 `
 )
 
-// EtcdPlaneJoinInput defines context to generate etcd instance user data for etcd plane node join.
-type EtcdPlaneJoinInput struct {
-	BaseUserData
-	secret.Certificates
-	EtcdadmArgs
-
-	EtcdadmJoinCommand string
-	JoinAddress        string
-	Version            string
-}
-
 // NewJoinControlPlane returns the user data string to be used on a new control plane instance.
-func NewJoinEtcdPlane(input *EtcdPlaneJoinInput) ([]byte, error) {
+func NewJoinEtcdPlane(input *userdata.EtcdPlaneJoinInput) ([]byte, error) {
 	input.WriteFiles = input.Certificates.AsFiles()
 	input.ControlPlane = true
 	input.EtcdadmJoinCommand = addEtcdadmFlags(&input.EtcdadmArgs, fmt.Sprintf(standardJoinCommand, input.JoinAddress))
-	if err := input.prepare(); err != nil {
+	if err := prepare(&input.BaseUserData); err != nil {
 		return nil, err
 	}
 	userData, err := generate("JoinControlplane", etcdPlaneJoinCloudInit, input)

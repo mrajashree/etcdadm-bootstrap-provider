@@ -16,9 +16,7 @@ limitations under the License.
 
 package cloudinit
 
-import (
-	"sigs.k8s.io/cluster-api/util/secret"
-)
+import "github.com/mrajashree/etcdadm-bootstrap-provider/pkg/userdata"
 
 const (
 	etcdPlaneCloudInit = `{{.Header}}
@@ -39,17 +37,8 @@ runcmd:
 `
 )
 
-// ControlPlaneInput defines the context to generate a controlplane instance user data.
-type EtcdPlaneInput struct {
-	BaseUserData
-	secret.Certificates
-	EtcdadmArgs
-
-	EtcdadmInitCommand string
-}
-
 // NewInitControlPlane returns the user data string to be used on a controlplane instance.
-func NewInitEtcdPlane(input *EtcdPlaneInput) ([]byte, error) {
+func NewInitEtcdPlane(input *userdata.EtcdPlaneInput) ([]byte, error) {
 	input.Header = cloudConfigHeader
 	input.WriteFiles = input.Certificates.AsFiles()
 	input.WriteFiles = append(input.WriteFiles, input.AdditionalFiles...)

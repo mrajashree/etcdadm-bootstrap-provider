@@ -1,13 +1,12 @@
 package cloudinit
 
-import "fmt"
+import (
+	"fmt"
 
-type EtcdadmArgs struct {
-	Version        string
-	EtcdReleaseURL string
-}
+	"github.com/mrajashree/etcdadm-bootstrap-provider/pkg/userdata"
+)
 
-func addEtcdadmFlags(input *EtcdadmArgs, cmd string) string {
+func addEtcdadmFlags(input *userdata.EtcdadmArgs, cmd string) string {
 	if input.Version != "" {
 		cmd += fmt.Sprintf(" --version %s", input.Version)
 	}

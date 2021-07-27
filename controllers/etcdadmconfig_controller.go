@@ -24,8 +24,9 @@ import (
 
 	"github.com/go-logr/logr"
 	bootstrapv1alpha3 "github.com/mrajashree/etcdadm-bootstrap-provider/api/v1alpha3"
-	"github.com/mrajashree/etcdadm-bootstrap-provider/cloudinit"
 	"github.com/mrajashree/etcdadm-bootstrap-provider/internal/locking"
+	"github.com/mrajashree/etcdadm-bootstrap-provider/pkg/userdata"
+	"github.com/mrajashree/etcdadm-bootstrap-provider/pkg/userdata/cloudinit"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -231,11 +232,11 @@ func (r *EtcdadmConfigReconciler) initializeEtcd(ctx context.Context, scope *Sco
 		*metav1.NewControllerRef(scope.Config, bootstrapv1alpha3.GroupVersion.WithKind("EtcdadmConfig")),
 	)
 
-	initInput := cloudinit.EtcdPlaneInput{
-		BaseUserData: cloudinit.BaseUserData{
+	initInput := userdata.EtcdPlaneInput{
+		BaseUserData: userdata.BaseUserData{
 			Users: scope.Config.Spec.Users,
 		},
-		EtcdadmArgs: cloudinit.EtcdadmArgs{
+		EtcdadmArgs: userdata.EtcdadmArgs{
 			Version:        scope.Config.Spec.Version,
 			EtcdReleaseURL: scope.Config.Spec.EtcdReleaseURL,
 		},
@@ -251,7 +252,6 @@ func (r *EtcdadmConfigReconciler) initializeEtcd(ctx context.Context, scope *Sco
 	}
 
 	cloudInitData, err := cloudinit.NewInitEtcdPlane(&initInput)
-
 	if err != nil {
 		log.Error(err, "Failed to generate cloud init for initializing etcd plane")
 		return ctrl.Result{}, err
@@ -288,12 +288,12 @@ func (r *EtcdadmConfigReconciler) joinEtcd(ctx context.Context, scope *Scope) (_
 	initMachineAddress := string(existingSecret.Data["address"])
 	joinAddress := fmt.Sprintf("https://%v:2379", initMachineAddress)
 
-	joinInput := cloudinit.EtcdPlaneJoinInput{
-		BaseUserData: cloudinit.BaseUserData{
+	joinInput := userdata.EtcdPlaneJoinInput{
+		BaseUserData: userdata.BaseUserData{
 			Users: scope.Config.Spec.Users,
 		},
 		JoinAddress: joinAddress,
-		EtcdadmArgs: cloudinit.EtcdadmArgs{
+		EtcdadmArgs: userdata.EtcdadmArgs{
 			Version:        scope.Config.Spec.Version,
 			EtcdReleaseURL: scope.Config.Spec.EtcdReleaseURL,
 		},
