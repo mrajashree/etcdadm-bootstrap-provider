@@ -2,7 +2,6 @@ package cloudinit
 
 import (
 	"bytes"
-	"strings"
 	"text/template"
 
 	"github.com/mrajashree/etcdadm-bootstrap-provider/pkg/userdata"
@@ -21,13 +20,7 @@ const (
 )
 
 var defaultTemplateFuncMap = template.FuncMap{
-	"Indent": templateYAMLIndent,
-}
-
-func templateYAMLIndent(i int, input string) string {
-	split := strings.Split(input, "\n")
-	ident := "\n" + strings.Repeat(" ", i)
-	return strings.Repeat(" ", i) + strings.Join(split, ident)
+	"Indent": userdata.TemplateYAMLIndent,
 }
 
 func generate(kind string, tpl string, data interface{}) ([]byte, error) {

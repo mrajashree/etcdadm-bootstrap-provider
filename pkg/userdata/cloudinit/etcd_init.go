@@ -37,13 +37,13 @@ runcmd:
 `
 )
 
-// NewInitControlPlane returns the user data string to be used on a controlplane instance.
+// NewInitEtcdPlane returns the user data string to be used on a etcd instance.
 func NewInitEtcdPlane(input *userdata.EtcdPlaneInput) ([]byte, error) {
 	input.Header = cloudConfigHeader
 	input.WriteFiles = input.Certificates.AsFiles()
 	input.WriteFiles = append(input.WriteFiles, input.AdditionalFiles...)
 	input.SentinelFileCommand = sentinelFileCommand
-	input.EtcdadmInitCommand = addEtcdadmFlags(&input.EtcdadmArgs, standardInitCommand)
+	input.EtcdadmInitCommand = userdata.AddArgsToCommand(standardInitCommand, &input.EtcdadmArgs)
 	userData, err := generate("InitEtcdplane", etcdPlaneCloudInit, input)
 	if err != nil {
 		return nil, err

@@ -26,6 +26,7 @@ import (
 	bootstrapv1alpha3 "github.com/mrajashree/etcdadm-bootstrap-provider/api/v1alpha3"
 	"github.com/mrajashree/etcdadm-bootstrap-provider/internal/locking"
 	"github.com/mrajashree/etcdadm-bootstrap-provider/pkg/userdata"
+	"github.com/mrajashree/etcdadm-bootstrap-provider/pkg/userdata/bottlerocket"
 	"github.com/mrajashree/etcdadm-bootstrap-provider/pkg/userdata/cloudinit"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -237,8 +238,8 @@ func (r *EtcdadmConfigReconciler) initializeEtcd(ctx context.Context, scope *Sco
 			Users: scope.Config.Spec.Users,
 		},
 		EtcdadmArgs: userdata.EtcdadmArgs{
-			Version:        scope.Config.Spec.Version,
-			EtcdReleaseURL: scope.Config.Spec.EtcdReleaseURL,
+			Version:         scope.Config.Spec.Version,
+			ImageRepository: scope.Config.Spec.ImageRepository,
 		},
 		Certificates: CACertKeyPair,
 	}
@@ -251,12 +252,21 @@ func (r *EtcdadmConfigReconciler) initializeEtcd(ctx context.Context, scope *Sco
 		}
 	}
 
-	cloudInitData, err := cloudinit.NewInitEtcdPlane(&initInput)
+	var bootstrapData []byte
+	var err error
+
+	switch scope.Config.Spec.Format {
+	case bootstrapv1alpha3.Bottlerocket:
+		bootstrapData, err = bottlerocket.NewInitEtcdPlane(&initInput, log)
+	default:
+		bootstrapData, err = cloudinit.NewInitEtcdPlane(&initInput)
+	}
 	if err != nil {
 		log.Error(err, "Failed to generate cloud init for initializing etcd plane")
 		return ctrl.Result{}, err
 	}
-	if err := r.storeBootstrapData(ctx, scope.Config, cloudInitData, scope.Cluster.Name); err != nil {
+
+	if err := r.storeBootstrapData(ctx, scope.Config, bootstrapData, scope.Cluster.Name); err != nil {
 		log.Error(err, "Failed to store bootstrap data")
 		return ctrl.Result{}, err
 	}
@@ -294,8 +304,8 @@ func (r *EtcdadmConfigReconciler) joinEtcd(ctx context.Context, scope *Scope) (_
 		},
 		JoinAddress: joinAddress,
 		EtcdadmArgs: userdata.EtcdadmArgs{
-			Version:        scope.Config.Spec.Version,
-			EtcdReleaseURL: scope.Config.Spec.EtcdReleaseURL,
+			Version:         scope.Config.Spec.Version,
+			ImageRepository: scope.Config.Spec.ImageRepository,
 		},
 		Certificates: etcdCerts,
 	}
@@ -308,12 +318,21 @@ func (r *EtcdadmConfigReconciler) joinEtcd(ctx context.Context, scope *Scope) (_
 		}
 	}
 
-	cloudInitData, err := cloudinit.NewJoinEtcdPlane(&joinInput)
+	var bootstrapData []byte
+	var err error
+
+	switch scope.Config.Spec.Format {
+	case bootstrapv1alpha3.Bottlerocket:
+		bootstrapData, err = bottlerocket.NewJoinEtcdPlane(&joinInput, log)
+	default:
+		bootstrapData, err = cloudinit.NewJoinEtcdPlane(&joinInput)
+	}
 	if err != nil {
 		log.Error(err, "Failed to generate cloud init for bootstrap etcd plane - join")
 		return ctrl.Result{}, err
 	}
-	if err := r.storeBootstrapData(ctx, scope.Config, cloudInitData, scope.Cluster.Name); err != nil {
+
+	if err := r.storeBootstrapData(ctx, scope.Config, bootstrapData, scope.Cluster.Name); err != nil {
 		log.Error(err, "Failed to store bootstrap data - join")
 		return ctrl.Result{}, err
 	}

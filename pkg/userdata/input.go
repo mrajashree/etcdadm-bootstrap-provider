@@ -1,6 +1,9 @@
 package userdata
 
 import (
+	"fmt"
+	"strings"
+
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1alpha3"
 	"sigs.k8s.io/cluster-api/util/secret"
 )
@@ -41,6 +44,27 @@ type BaseUserData struct {
 }
 
 type EtcdadmArgs struct {
-	Version        string
-	EtcdReleaseURL string
+	Version         string
+	ImageRepository string
+}
+
+func (args *EtcdadmArgs) Flags() []string {
+	flags := make([]string, 0, 3)
+	flags = append(flags, "--init-system kubelet")
+	if args.Version != "" {
+		flags = append(flags, fmt.Sprintf("--version %s", args.Version))
+	}
+	if args.ImageRepository != "" {
+		flags = append(flags, fmt.Sprintf(" --image-repository %s", args.ImageRepository))
+	}
+	return flags
+}
+
+func AddArgsToCommand(cmd string, args *EtcdadmArgs) string {
+	flags := args.Flags()
+	fullCommand := make([]string, len(flags)+1)
+	fullCommand = append(fullCommand, cmd)
+	fullCommand = append(fullCommand, flags...)
+
+	return strings.Join(fullCommand, " ")
 }

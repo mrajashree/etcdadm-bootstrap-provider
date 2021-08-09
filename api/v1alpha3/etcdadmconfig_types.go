@@ -25,7 +25,15 @@ import (
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 const (
 	DataSecretAvailableCondition clusterv1.ConditionType = "DataSecretAvailable"
+	// CloudConfig make the bootstrap data to be of cloud-config format.
+	CloudConfig Format = "cloud-config"
+	// Bottlerocket make the bootstrap data to be of bottlerocket format.
+	Bottlerocket Format = "bottlerocket"
 )
+
+// Format specifies the output format of the bootstrap data
+// +kubebuilder:validation:Enum=cloud-config;bottlerocket
+type Format string
 
 // EtcdadmConfigSpec defines the desired state of EtcdadmConfig
 type EtcdadmConfigSpec struct {
@@ -50,12 +58,16 @@ type EtcdadmConfigSpec struct {
 	// +optional
 	Version string `json:"version,omitempty"`
 
-	// EtcdReleaseURL is an optional field to specify where etcdadm can download etcd from
+	// ImageRepository is an optional field to specify where etcdadm can pull etcd images from
 	// +optional
-	EtcdReleaseURL string `json:"etcdReleaseURL,omitempty"`
+	ImageRepository string `json:"imageRepository,omitempty"`
 
 	// +optional
 	//EtcdadmArgs map[string]interface{} `json:"etcdadmArgs,omitempty"`
+
+	// Format specifies the output format of the bootstrap data
+	// +optional
+	Format Format `json:"format,omitempty"`
 }
 
 // EtcdadmConfigStatus defines the observed state of EtcdadmConfig
