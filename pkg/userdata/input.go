@@ -25,7 +25,6 @@ type EtcdPlaneJoinInput struct {
 
 	EtcdadmJoinCommand string
 	JoinAddress        string
-	Version            string
 }
 
 // BaseUserData is shared across all the various types of files written to disk.
