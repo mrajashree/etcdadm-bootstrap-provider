@@ -43,7 +43,7 @@ func NewInitEtcdPlane(input *userdata.EtcdPlaneInput) ([]byte, error) {
 	input.WriteFiles = input.Certificates.AsFiles()
 	input.WriteFiles = append(input.WriteFiles, input.AdditionalFiles...)
 	input.SentinelFileCommand = sentinelFileCommand
-	input.EtcdadmInitCommand = userdata.AddArgsToCommand(standardInitCommand, &input.EtcdadmArgs)
+	input.EtcdadmInitCommand = userdata.AddSystemdArgsToCommand(standardInitCommand, &input.EtcdadmArgs)
 	userData, err := generate("InitEtcdplane", etcdPlaneCloudInit, input)
 	if err != nil {
 		return nil, err

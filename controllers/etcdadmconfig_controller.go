@@ -240,6 +240,7 @@ func (r *EtcdadmConfigReconciler) initializeEtcd(ctx context.Context, scope *Sco
 		EtcdadmArgs: userdata.EtcdadmArgs{
 			Version:         scope.Config.Spec.Version,
 			ImageRepository: scope.Config.Spec.ImageRepository,
+			EtcdReleaseURL:  scope.Config.Spec.EtcdReleaseURL,
 		},
 		Certificates: CACertKeyPair,
 	}
@@ -306,6 +307,7 @@ func (r *EtcdadmConfigReconciler) joinEtcd(ctx context.Context, scope *Scope) (_
 		EtcdadmArgs: userdata.EtcdadmArgs{
 			Version:         scope.Config.Spec.Version,
 			ImageRepository: scope.Config.Spec.ImageRepository,
+			EtcdReleaseURL:  scope.Config.Spec.EtcdReleaseURL,
 		},
 		Certificates: etcdCerts,
 	}

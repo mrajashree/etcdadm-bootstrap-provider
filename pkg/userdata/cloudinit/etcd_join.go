@@ -30,7 +30,7 @@ runcmd:
 func NewJoinEtcdPlane(input *userdata.EtcdPlaneJoinInput) ([]byte, error) {
 	input.WriteFiles = input.Certificates.AsFiles()
 	input.ControlPlane = true
-	input.EtcdadmJoinCommand = userdata.AddArgsToCommand(fmt.Sprintf(standardJoinCommand, input.JoinAddress), &input.EtcdadmArgs)
+	input.EtcdadmJoinCommand = userdata.AddSystemdArgsToCommand(fmt.Sprintf(standardJoinCommand, input.JoinAddress), &input.EtcdadmArgs)
 	if err := prepare(&input.BaseUserData); err != nil {
 		return nil, err
 	}

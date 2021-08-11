@@ -62,6 +62,10 @@ type EtcdadmConfigSpec struct {
 	// +optional
 	ImageRepository string `json:"imageRepository,omitempty"`
 
+	// EtcdReleaseURL is an optional field to specify where etcdadm can download etcd from
+	// +optional
+	EtcdReleaseURL string `json:"etcdReleaseURL,omitempty"`
+
 	// +optional
 	//EtcdadmArgs map[string]interface{} `json:"etcdadmArgs,omitempty"`
 

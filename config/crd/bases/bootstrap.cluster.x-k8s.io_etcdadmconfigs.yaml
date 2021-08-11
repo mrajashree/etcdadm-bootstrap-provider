@@ -36,6 +36,10 @@ spec:
           spec:
             description: EtcdadmConfigSpec defines the desired state of EtcdadmConfig
             properties:
+              etcdReleaseURL:
+                description: EtcdReleaseURL is an optional field to specify where
+                  etcdadm can download etcd from
+                type: string
               etcdadmBuiltin:
                 type: boolean
               etcdadmInstallCommands:
