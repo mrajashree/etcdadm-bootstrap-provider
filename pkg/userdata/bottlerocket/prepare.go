@@ -5,7 +5,6 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/mrajashree/etcdadm-bootstrap-provider/pkg/userdata"
-	"sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1alpha3"
 )
 
 const (
@@ -21,16 +20,12 @@ func prepare(input *userdata.BaseUserData) {
 }
 
 func patchCertPaths(input *userdata.BaseUserData) {
-	// hacky. new array bc I need to update the original object and these are not pointers
-	files := make([]v1alpha3.File, 0, len(input.WriteFiles))
 	for ind, file := range input.WriteFiles {
 		if filepath.Dir(file.Path) == orgCertsPath {
 			file.Path = filepath.Join(newCertsPath, filepath.Base(file.Path))
 		}
-		files[ind] = file
+		input.WriteFiles[ind] = file
 	}
-
-	input.WriteFiles = files
 }
 
 func logIgnoredFields(input *userdata.BaseUserData, log logr.Logger) {
