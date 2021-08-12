@@ -2,11 +2,10 @@ package cloudinit
 
 import (
 	"bytes"
-	"strings"
 	"text/template"
 
+	"github.com/mrajashree/etcdadm-bootstrap-provider/pkg/userdata"
 	"github.com/pkg/errors"
-	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1alpha3"
 )
 
 const (
@@ -20,31 +19,8 @@ const (
 `
 )
 
-var (
-	defaultTemplateFuncMap = template.FuncMap{
-		"Indent": templateYAMLIndent,
-	}
-)
-
-func templateYAMLIndent(i int, input string) string {
-	split := strings.Split(input, "\n")
-	ident := "\n" + strings.Repeat(" ", i)
-	return strings.Repeat(" ", i) + strings.Join(split, ident)
-}
-
-// BaseUserData is shared across all the various types of files written to disk.
-type BaseUserData struct {
-	Header              string
-	PreEtcdadmCommands  []string
-	PostEtcdadmCommands []string
-	AdditionalFiles     []bootstrapv1.File
-	WriteFiles          []bootstrapv1.File
-	Users               []bootstrapv1.User
-	NTP                 *bootstrapv1.NTP
-	DiskSetup           *bootstrapv1.DiskSetup
-	Mounts              []bootstrapv1.MountPoints
-	ControlPlane        bool
-	SentinelFileCommand string
+var defaultTemplateFuncMap = template.FuncMap{
+	"Indent": userdata.TemplateYAMLIndent,
 }
 
 func generate(kind string, tpl string, data interface{}) ([]byte, error) {
@@ -90,7 +66,7 @@ func generate(kind string, tpl string, data interface{}) ([]byte, error) {
 	return out.Bytes(), nil
 }
 
-func (input *BaseUserData) prepare() error {
+func prepare(input *userdata.BaseUserData) error {
 	input.Header = cloudConfigHeader
 	input.WriteFiles = append(input.WriteFiles, input.AdditionalFiles...)
 	input.SentinelFileCommand = sentinelFileCommand
