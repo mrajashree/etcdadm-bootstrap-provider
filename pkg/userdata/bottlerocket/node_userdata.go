@@ -31,7 +31,7 @@ server-tls-bootstrap = false
 [settings.host-containers.kubeadm-bootstrap]
 enabled = true
 superpowered = true
-source = "public.ecr.aws/w4k1d8o8/kubeadm-bootstrap:latest"
+source = "public.ecr.aws/l0g8r8j6/bottlerocket-bootstrap:v1-21-3-eks-a-vDev.build.33"
 user-data = "{{.BootstrapContainerUserData}}"
 {{- end -}}
 `
