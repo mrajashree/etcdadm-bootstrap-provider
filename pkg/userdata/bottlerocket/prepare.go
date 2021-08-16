@@ -40,7 +40,12 @@ func buildEtcdadmArgs(config bootstrapv1alpha3.BottlerocketConfig) userdata.Etcd
 
 func splitRepositoryAndTag(image string) (repository, tag string) {
 	lastInd := strings.LastIndex(image, ":")
-	if lastInd == -1 || lastInd == len(image)-1 {
+	if lastInd == -1 {
+		return image, ""
+	}
+	if lastInd == len(image)-1 {
+		return image[:lastInd], ""
+	}
 		return image, ""
 	}
 	return image[:lastInd], image[lastInd+1:]
