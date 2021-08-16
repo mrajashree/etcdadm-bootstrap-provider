@@ -7,6 +7,7 @@ import (
 	"strings"
 	"text/template"
 
+	bootstrapv1alpha3 "github.com/mrajashree/etcdadm-bootstrap-provider/api/v1alpha3"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1alpha3"
 
 	"github.com/pkg/errors"
@@ -31,7 +32,7 @@ server-tls-bootstrap = false
 [settings.host-containers.kubeadm-bootstrap]
 enabled = true
 superpowered = true
-source = "public.ecr.aws/l0g8r8j6/bottlerocket-bootstrap:v1-21-3-eks-a-vDev.build.33"
+source = "{{.BootstrapContainerSource}}"
 user-data = "{{.BootstrapContainerUserData}}"
 {{- end -}}
 `
@@ -46,6 +47,7 @@ user-data = "{{.BootstrapContainerUserData}}"
 type bottlerocketSettingsInput struct {
 	BootstrapContainerUserData string
 	AdminContainerUserData     string
+	BootstrapContainerSource   string
 }
 
 type hostPath struct {
@@ -54,7 +56,7 @@ type hostPath struct {
 }
 
 // generateBottlerocketNodeUserData returns the userdata for the host bottlerocket in toml format
-func generateBottlerocketNodeUserData(bootstrapContainerUserData []byte, users []bootstrapv1.User) ([]byte, error) {
+func generateBottlerocketNodeUserData(bootstrapContainerUserData []byte, users []bootstrapv1.User, config *bootstrapv1alpha3.BottlerocketConfig) ([]byte, error) {
 	// base64 encode the bootstrapContainer's user data
 	b64BootstrapContainerUserData := base64.StdEncoding.EncodeToString(bootstrapContainerUserData)
 
@@ -71,6 +73,7 @@ func generateBottlerocketNodeUserData(bootstrapContainerUserData []byte, users [
 	bottlerocketInput := &bottlerocketSettingsInput{
 		BootstrapContainerUserData: b64BootstrapContainerUserData,
 		AdminContainerUserData:     b64AdminContainerUserData,
+		BootstrapContainerSource:   config.BootstrapImage,
 	}
 
 	bottlerocketNodeUserData, err := generateNodeUserData("InitBottlerocketNode", bottlerocketNodeInitSettingsTemplate, bottlerocketInput)

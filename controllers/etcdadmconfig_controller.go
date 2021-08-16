@@ -239,19 +239,16 @@ func (r *EtcdadmConfigReconciler) initializeEtcd(ctx context.Context, scope *Sco
 		BaseUserData: userdata.BaseUserData{
 			Users: scope.Config.Spec.Users,
 		},
-		EtcdadmArgs: userdata.EtcdadmArgs{
-			Version:         scope.Config.Spec.Version,
-			ImageRepository: scope.Config.Spec.ImageRepository,
-			EtcdReleaseURL:  scope.Config.Spec.EtcdReleaseURL,
-		},
+		EtcdadmArgs:  buildEtcdadmArgs(scope.Config.Spec),
 		Certificates: CACertKeyPair,
 	}
+
 	// only do this if etcdadm not baked in image
-	if !scope.Config.Spec.EtcdadmBuiltin {
-		if len(scope.Config.Spec.EtcdadmInstallCommands) > 0 {
-			initInput.PreEtcdadmCommands = append(scope.Config.Spec.PreEtcdadmCommands, scope.Config.Spec.EtcdadmInstallCommands...)
+	if !scope.Config.Spec.EtcdadmBuiltin && scope.Config.Spec.CloudConfigConfig != nil {
+		if len(scope.Config.Spec.CloudConfigConfig.EtcdadmInstallCommands) > 0 {
+			initInput.PreEtcdadmCommands = append(scope.Config.Spec.CloudConfigConfig.PreEtcdadmCommands, scope.Config.Spec.CloudConfigConfig.EtcdadmInstallCommands...)
 		} else {
-			initInput.PreEtcdadmCommands = append(scope.Config.Spec.PreEtcdadmCommands, defaultEtcdadmInstallCommands...)
+			initInput.PreEtcdadmCommands = append(scope.Config.Spec.CloudConfigConfig.PreEtcdadmCommands, defaultEtcdadmInstallCommands...)
 		}
 	}
 
@@ -260,7 +257,7 @@ func (r *EtcdadmConfigReconciler) initializeEtcd(ctx context.Context, scope *Sco
 
 	switch scope.Config.Spec.Format {
 	case bootstrapv1alpha3.Bottlerocket:
-		bootstrapData, err = bottlerocket.NewInitEtcdPlane(&initInput, log)
+		bootstrapData, err = bottlerocket.NewInitEtcdPlane(&initInput, scope.Config.Spec.BottlerocketConfig, log)
 	default:
 		bootstrapData, err = cloudinit.NewInitEtcdPlane(&initInput)
 	}
@@ -292,7 +289,7 @@ func (r *EtcdadmConfigReconciler) joinEtcd(ctx context.Context, scope *Scope) (_
 	log.Info("Machine Controller has set address on init machine")
 
 	etcdCerts := etcdCACertKeyPair()
-	rerr = etcdCerts.Lookup(
+	_ = etcdCerts.Lookup(
 		ctx,
 		r.Client,
 		util.ObjectKey(scope.Cluster),
@@ -305,20 +302,16 @@ func (r *EtcdadmConfigReconciler) joinEtcd(ctx context.Context, scope *Scope) (_
 		BaseUserData: userdata.BaseUserData{
 			Users: scope.Config.Spec.Users,
 		},
-		JoinAddress: joinAddress,
-		EtcdadmArgs: userdata.EtcdadmArgs{
-			Version:         scope.Config.Spec.Version,
-			ImageRepository: scope.Config.Spec.ImageRepository,
-			EtcdReleaseURL:  scope.Config.Spec.EtcdReleaseURL,
-		},
+		JoinAddress:  joinAddress,
+		EtcdadmArgs:  buildEtcdadmArgs(scope.Config.Spec),
 		Certificates: etcdCerts,
 	}
 
 	if !scope.Config.Spec.EtcdadmBuiltin {
-		if len(scope.Config.Spec.EtcdadmInstallCommands) > 0 {
-			joinInput.PreEtcdadmCommands = append(scope.Config.Spec.PreEtcdadmCommands, scope.Config.Spec.EtcdadmInstallCommands...)
+		if len(scope.Config.Spec.CloudConfigConfig.EtcdadmInstallCommands) > 0 {
+			joinInput.PreEtcdadmCommands = append(scope.Config.Spec.CloudConfigConfig.PreEtcdadmCommands, scope.Config.Spec.CloudConfigConfig.EtcdadmInstallCommands...)
 		} else {
-			joinInput.PreEtcdadmCommands = append(scope.Config.Spec.PreEtcdadmCommands, defaultEtcdadmInstallCommands...)
+			joinInput.PreEtcdadmCommands = append(scope.Config.Spec.CloudConfigConfig.PreEtcdadmCommands, defaultEtcdadmInstallCommands...)
 		}
 	}
 
@@ -327,7 +320,7 @@ func (r *EtcdadmConfigReconciler) joinEtcd(ctx context.Context, scope *Scope) (_
 
 	switch scope.Config.Spec.Format {
 	case bootstrapv1alpha3.Bottlerocket:
-		bootstrapData, err = bottlerocket.NewJoinEtcdPlane(&joinInput, log)
+		bootstrapData, err = bottlerocket.NewJoinEtcdPlane(&joinInput, scope.Config.Spec.BottlerocketConfig, log)
 	default:
 		bootstrapData, err = cloudinit.NewJoinEtcdPlane(&joinInput)
 	}
@@ -399,4 +392,17 @@ func (r *EtcdadmConfigReconciler) storeBootstrapData(ctx context.Context, config
 	config.Status.Ready = true
 	conditions.MarkTrue(config, bootstrapv1.DataSecretAvailableCondition)
 	return nil
+}
+
+func buildEtcdadmArgs(spec bootstrapv1alpha3.EtcdadmConfigSpec) userdata.EtcdadmArgs {
+	etcdadmArgs := userdata.EtcdadmArgs{}
+	if spec.CloudConfigConfig != nil {
+		etcdadmArgs.Version = spec.CloudConfigConfig.Version
+		etcdadmArgs.EtcdReleaseURL = spec.CloudConfigConfig.EtcdReleaseURL
+	} else if spec.BottlerocketConfig != nil {
+		etcdadmArgs.Version = spec.BottlerocketConfig.EtcdImageTag
+		etcdadmArgs.ImageRepository = spec.BottlerocketConfig.EtcdImageRepository
+	}
+
+	return etcdadmArgs
 }

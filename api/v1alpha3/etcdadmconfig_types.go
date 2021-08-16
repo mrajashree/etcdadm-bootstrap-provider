@@ -45,6 +45,33 @@ type EtcdadmConfigSpec struct {
 	EtcdadmBuiltin bool `json:"etcdadmBuiltin,omitempty"`
 
 	// +optional
+	// EtcdadmArgs map[string]interface{} `json:"etcdadmArgs,omitempty"`
+
+	// Format specifies the output format of the bootstrap data
+	// +optional
+	Format Format `json:"format,omitempty"`
+
+	// BottlerocketConfig specifies the configuration for the bottlerocket bootstrap data
+	// +optional
+	BottlerocketConfig *BottlerocketConfig `json:"bottlerocketConfig,omitempty"`
+
+	// CloudConfigConfig specifies the configuration for the cloud-init bootstrap data
+	// +optional
+	CloudConfigConfig *CloudConfigConfig `json:"cloudConfigConfig,omitempty"`
+}
+
+type BottlerocketConfig struct {
+	// EtcdImageRepository specifies where etcdadm can pull etcd images from
+	EtcdImageRepository string `json:"etcdimageRepository,omitempty"`
+
+	// EtcdImageTag specifies the etcd image version to use by etcdadm
+	EtcdImageTag string `json:"etcdimageTag,omitempty"`
+
+	// BootstrapImage specifies the container image to use for bottlerocket's bootstrapping
+	BootstrapImage string `json:"bootstrapImage"`
+}
+type CloudConfigConfig struct {
+	// +optional
 	EtcdadmInstallCommands []string `json:"etcdadmInstallCommands,omitempty"`
 
 	// PreEtcdadmCommands specifies extra commands to run before kubeadm runs
@@ -58,20 +85,9 @@ type EtcdadmConfigSpec struct {
 	// +optional
 	Version string `json:"version,omitempty"`
 
-	// ImageRepository is an optional field to specify where etcdadm can pull etcd images from
-	// +optional
-	ImageRepository string `json:"imageRepository,omitempty"`
-
 	// EtcdReleaseURL is an optional field to specify where etcdadm can download etcd from
 	// +optional
 	EtcdReleaseURL string `json:"etcdReleaseURL,omitempty"`
-
-	// +optional
-	//EtcdadmArgs map[string]interface{} `json:"etcdadmArgs,omitempty"`
-
-	// Format specifies the output format of the bootstrap data
-	// +optional
-	Format Format `json:"format,omitempty"`
 }
 
 // EtcdadmConfigStatus defines the observed state of EtcdadmConfig

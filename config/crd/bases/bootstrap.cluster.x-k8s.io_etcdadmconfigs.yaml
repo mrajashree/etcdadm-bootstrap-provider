@@ -36,38 +36,60 @@ spec:
           spec:
             description: EtcdadmConfigSpec defines the desired state of EtcdadmConfig
             properties:
-              etcdReleaseURL:
-                description: EtcdReleaseURL is an optional field to specify where
-                  etcdadm can download etcd from
-                type: string
+              bottlerocketConfig:
+                description: BottlerocketConfig specifies the configuration for the
+                  bottlerocket bootstrap data
+                properties:
+                  bootstrapImage:
+                    description: BootstrapImage specifies the container image to use
+                      for bottlerocket's bootstrapping
+                    type: string
+                  etcdimageRepository:
+                    description: EtcdImageRepository specifies where etcdadm can pull
+                      etcd images from
+                    type: string
+                  etcdimageTag:
+                    description: EtcdImageTag specifies the etcd image version to
+                      use by etcdadm
+                    type: string
+                required:
+                - bootstrapImage
+                type: object
+              cloudConfigConfig:
+                description: CloudConfigConfig specifies the configuration for the
+                  cloud-init bootstrap data
+                properties:
+                  etcdReleaseURL:
+                    description: EtcdReleaseURL is an optional field to specify where
+                      etcdadm can download etcd from
+                    type: string
+                  etcdadmInstallCommands:
+                    items:
+                      type: string
+                    type: array
+                  postEtcdadmCommands:
+                    description: PostEtcdadmCommands specifies extra commands to run
+                      after kubeadm runs
+                    items:
+                      type: string
+                    type: array
+                  preEtcdadmCommands:
+                    description: PreEtcdadmCommands specifies extra commands to run
+                      before kubeadm runs
+                    items:
+                      type: string
+                    type: array
+                  version:
+                    type: string
+                type: object
               etcdadmBuiltin:
                 type: boolean
-              etcdadmInstallCommands:
-                items:
-                  type: string
-                type: array
               format:
                 description: Format specifies the output format of the bootstrap data
                 enum:
                 - cloud-config
                 - bottlerocket
                 type: string
-              imageRepository:
-                description: ImageRepository is an optional field to specify where
-                  etcdadm can pull etcd images from
-                type: string
-              postEtcdadmCommands:
-                description: PostEtcdadmCommands specifies extra commands to run after
-                  kubeadm runs
-                items:
-                  type: string
-                type: array
-              preEtcdadmCommands:
-                description: PreEtcdadmCommands specifies extra commands to run before
-                  kubeadm runs
-                items:
-                  type: string
-                type: array
               users:
                 description: Users specifies extra users to add
                 items:
@@ -118,8 +140,6 @@ spec:
                   - name
                   type: object
                 type: array
-              version:
-                type: string
             type: object
           status:
             description: EtcdadmConfigStatus defines the observed state of EtcdadmConfig
