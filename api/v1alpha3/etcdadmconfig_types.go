@@ -55,23 +55,33 @@ type EtcdadmConfigSpec struct {
 	// +optional
 	PostEtcdadmCommands []string `json:"postEtcdadmCommands,omitempty"`
 
+	// Format specifies the output format of the bootstrap data
+	// +optional
+	Format Format `json:"format,omitempty"`
+
+	// BottlerocketConfig specifies the configuration for the bottlerocket bootstrap data
+	// +optional
+	BottlerocketConfig *BottlerocketConfig `json:"bottlerocketConfig,omitempty"`
+
+	// CloudInitConfig specifies the configuration for the cloud-init bootstrap data
+	// +optional
+	CloudInitConfig *CloudInitConfig `json:"cloudInitConfig,omitempty"`
+}
+
+type BottlerocketConfig struct {
+	// EtcdImage specifies the etcd image to use by etcdadm
+	EtcdImage string `json:"etcdImage,omitempty"`
+
+	// BootstrapImage specifies the container image to use for bottlerocket's bootstrapping
+	BootstrapImage string `json:"bootstrapImage"`
+}
+type CloudInitConfig struct {
 	// +optional
 	Version string `json:"version,omitempty"`
-
-	// ImageRepository is an optional field to specify where etcdadm can pull etcd images from
-	// +optional
-	ImageRepository string `json:"imageRepository,omitempty"`
 
 	// EtcdReleaseURL is an optional field to specify where etcdadm can download etcd from
 	// +optional
 	EtcdReleaseURL string `json:"etcdReleaseURL,omitempty"`
-
-	// +optional
-	//EtcdadmArgs map[string]interface{} `json:"etcdadmArgs,omitempty"`
-
-	// Format specifies the output format of the bootstrap data
-	// +optional
-	Format Format `json:"format,omitempty"`
 }
 
 // EtcdadmConfigStatus defines the observed state of EtcdadmConfig

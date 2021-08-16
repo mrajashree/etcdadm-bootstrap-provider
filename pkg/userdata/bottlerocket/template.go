@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"text/template"
 
+	bootstrapv1alpha3 "github.com/mrajashree/etcdadm-bootstrap-provider/api/v1alpha3"
 	"github.com/mrajashree/etcdadm-bootstrap-provider/pkg/userdata"
 	"github.com/pkg/errors"
 )
@@ -21,13 +22,13 @@ var defaultTemplateFuncMap = template.FuncMap{
 	"Indent": userdata.TemplateYAMLIndent,
 }
 
-func generateUserData(kind string, tpl string, data interface{}, input *userdata.BaseUserData) ([]byte, error) {
+func generateUserData(kind string, tpl string, data interface{}, input *userdata.BaseUserData, config bootstrapv1alpha3.BottlerocketConfig) ([]byte, error) {
 	bootstrapContainerUserData, err := generateBootstrapContainerUserData(kind, tpl, data)
 	if err != nil {
 		return nil, err
 	}
 
-	return generateBottlerocketNodeUserData(bootstrapContainerUserData, input.Users)
+	return generateBottlerocketNodeUserData(bootstrapContainerUserData, input.Users, config)
 }
 
 func generateBootstrapContainerUserData(kind string, tpl string, data interface{}) ([]byte, error) {

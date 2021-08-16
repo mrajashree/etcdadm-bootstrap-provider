@@ -2,8 +2,10 @@ package bottlerocket
 
 import (
 	"path/filepath"
+	"strings"
 
 	"github.com/go-logr/logr"
+	bootstrapv1alpha3 "github.com/mrajashree/etcdadm-bootstrap-provider/api/v1alpha3"
 	"github.com/mrajashree/etcdadm-bootstrap-provider/pkg/userdata"
 )
 
@@ -26,6 +28,27 @@ func patchCertPaths(input *userdata.BaseUserData) {
 		}
 		input.WriteFiles[ind] = file
 	}
+}
+
+func buildEtcdadmArgs(config bootstrapv1alpha3.BottlerocketConfig) userdata.EtcdadmArgs {
+	repository, tag := splitRepositoryAndTag(config.EtcdImage)
+	return userdata.EtcdadmArgs{
+		Version:         strings.TrimPrefix(tag, "v"), // trim "v" to get pure simver because that's what etcdadm expects.
+		ImageRepository: repository,
+	}
+}
+
+func splitRepositoryAndTag(image string) (repository, tag string) {
+	lastInd := strings.LastIndex(image, ":")
+	if lastInd == -1 {
+		return image, ""
+	}
+
+	if lastInd == len(image)-1 {
+		return image[:lastInd], ""
+	}
+
+	return image[:lastInd], image[lastInd+1:]
 }
 
 func logIgnoredFields(input *userdata.BaseUserData, log logr.Logger) {

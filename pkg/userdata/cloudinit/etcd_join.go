@@ -3,6 +3,7 @@ package cloudinit
 import (
 	"fmt"
 
+	bootstrapv1alpha3 "github.com/mrajashree/etcdadm-bootstrap-provider/api/v1alpha3"
 	"github.com/mrajashree/etcdadm-bootstrap-provider/pkg/userdata"
 	"github.com/pkg/errors"
 )
@@ -27,13 +28,14 @@ runcmd:
 )
 
 // NewJoinControlPlane returns the user data string to be used on a new control plane instance.
-func NewJoinEtcdPlane(input *userdata.EtcdPlaneJoinInput) ([]byte, error) {
+func NewJoinEtcdPlane(input *userdata.EtcdPlaneJoinInput, config bootstrapv1alpha3.CloudInitConfig) ([]byte, error) {
 	input.WriteFiles = input.Certificates.AsFiles()
 	input.ControlPlane = true
 	input.EtcdadmJoinCommand = userdata.AddSystemdArgsToCommand(fmt.Sprintf(standardJoinCommand, input.JoinAddress), &input.EtcdadmArgs)
 	if err := prepare(&input.BaseUserData); err != nil {
 		return nil, err
 	}
+	input.EtcdadmArgs = buildEtcdadmArgs(config)
 	userData, err := generate("JoinControlplane", etcdPlaneJoinCloudInit, input)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to generate user data for machine joining control plane")

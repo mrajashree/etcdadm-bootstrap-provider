@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"text/template"
 
+	bootstrapv1alpha3 "github.com/mrajashree/etcdadm-bootstrap-provider/api/v1alpha3"
 	"github.com/mrajashree/etcdadm-bootstrap-provider/pkg/userdata"
 	"github.com/pkg/errors"
 )
@@ -71,4 +72,11 @@ func prepare(input *userdata.BaseUserData) error {
 	input.WriteFiles = append(input.WriteFiles, input.AdditionalFiles...)
 	input.SentinelFileCommand = sentinelFileCommand
 	return nil
+}
+
+func buildEtcdadmArgs(config bootstrapv1alpha3.CloudInitConfig) userdata.EtcdadmArgs {
+	return userdata.EtcdadmArgs{
+		Version:        config.Version,
+		EtcdReleaseURL: config.EtcdReleaseURL,
+	}
 }

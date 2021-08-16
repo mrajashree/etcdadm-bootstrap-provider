@@ -339,6 +339,9 @@ func newEtcdadmConfig(machine *clusterv1.Machine, name string) *bootstrapv1alpha
 			Name:      name,
 			Namespace: "default",
 		},
+		Spec: bootstrapv1alpha3.EtcdadmConfigSpec{
+			CloudInitConfig: &bootstrapv1alpha3.CloudInitConfig{},
+		},
 	}
 
 	if machine != nil {

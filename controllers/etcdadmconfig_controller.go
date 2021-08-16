@@ -239,13 +239,9 @@ func (r *EtcdadmConfigReconciler) initializeEtcd(ctx context.Context, scope *Sco
 		BaseUserData: userdata.BaseUserData{
 			Users: scope.Config.Spec.Users,
 		},
-		EtcdadmArgs: userdata.EtcdadmArgs{
-			Version:         scope.Config.Spec.Version,
-			ImageRepository: scope.Config.Spec.ImageRepository,
-			EtcdReleaseURL:  scope.Config.Spec.EtcdReleaseURL,
-		},
 		Certificates: CACertKeyPair,
 	}
+
 	// only do this if etcdadm not baked in image
 	if !scope.Config.Spec.EtcdadmBuiltin {
 		if len(scope.Config.Spec.EtcdadmInstallCommands) > 0 {
@@ -260,9 +256,9 @@ func (r *EtcdadmConfigReconciler) initializeEtcd(ctx context.Context, scope *Sco
 
 	switch scope.Config.Spec.Format {
 	case bootstrapv1alpha3.Bottlerocket:
-		bootstrapData, err = bottlerocket.NewInitEtcdPlane(&initInput, log)
+		bootstrapData, err = bottlerocket.NewInitEtcdPlane(&initInput, *scope.Config.Spec.BottlerocketConfig, log)
 	default:
-		bootstrapData, err = cloudinit.NewInitEtcdPlane(&initInput)
+		bootstrapData, err = cloudinit.NewInitEtcdPlane(&initInput, *scope.Config.Spec.CloudInitConfig)
 	}
 	if err != nil {
 		log.Error(err, "Failed to generate cloud init for initializing etcd plane")
@@ -292,11 +288,13 @@ func (r *EtcdadmConfigReconciler) joinEtcd(ctx context.Context, scope *Scope) (_
 	log.Info("Machine Controller has set address on init machine")
 
 	etcdCerts := etcdCACertKeyPair()
-	rerr = etcdCerts.Lookup(
+	if err := etcdCerts.Lookup(
 		ctx,
 		r.Client,
 		util.ObjectKey(scope.Cluster),
-	)
+	); err != nil {
+		return ctrl.Result{}, errors.Wrap(err, "failed doing a lookup for certs during join")
+	}
 
 	initMachineAddress := string(existingSecret.Data["address"])
 	joinAddress := fmt.Sprintf("https://%v:2379", initMachineAddress)
@@ -305,12 +303,7 @@ func (r *EtcdadmConfigReconciler) joinEtcd(ctx context.Context, scope *Scope) (_
 		BaseUserData: userdata.BaseUserData{
 			Users: scope.Config.Spec.Users,
 		},
-		JoinAddress: joinAddress,
-		EtcdadmArgs: userdata.EtcdadmArgs{
-			Version:         scope.Config.Spec.Version,
-			ImageRepository: scope.Config.Spec.ImageRepository,
-			EtcdReleaseURL:  scope.Config.Spec.EtcdReleaseURL,
-		},
+		JoinAddress:  joinAddress,
 		Certificates: etcdCerts,
 	}
 
@@ -327,9 +320,9 @@ func (r *EtcdadmConfigReconciler) joinEtcd(ctx context.Context, scope *Scope) (_
 
 	switch scope.Config.Spec.Format {
 	case bootstrapv1alpha3.Bottlerocket:
-		bootstrapData, err = bottlerocket.NewJoinEtcdPlane(&joinInput, log)
+		bootstrapData, err = bottlerocket.NewJoinEtcdPlane(&joinInput, *scope.Config.Spec.BottlerocketConfig, log)
 	default:
-		bootstrapData, err = cloudinit.NewJoinEtcdPlane(&joinInput)
+		bootstrapData, err = cloudinit.NewJoinEtcdPlane(&joinInput, *scope.Config.Spec.CloudInitConfig)
 	}
 	if err != nil {
 		log.Error(err, "Failed to generate cloud init for bootstrap etcd plane - join")

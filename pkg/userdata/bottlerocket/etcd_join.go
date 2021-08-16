@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
+	bootstrapv1alpha3 "github.com/mrajashree/etcdadm-bootstrap-provider/api/v1alpha3"
 	"github.com/mrajashree/etcdadm-bootstrap-provider/pkg/userdata"
 	"github.com/pkg/errors"
 )
@@ -20,13 +21,14 @@ runcmd: "{{ .EtcdadmJoinCommand }}"
 )
 
 // NewJoinControlPlane returns the user data string to be used on a new control plane instance.
-func NewJoinEtcdPlane(input *userdata.EtcdPlaneJoinInput, log logr.Logger) ([]byte, error) {
+func NewJoinEtcdPlane(input *userdata.EtcdPlaneJoinInput, config bootstrapv1alpha3.BottlerocketConfig, log logr.Logger) ([]byte, error) {
 	input.WriteFiles = input.Certificates.AsFiles()
 	prepare(&input.BaseUserData)
+	input.EtcdadmArgs = buildEtcdadmArgs(config)
 	logIgnoredFields(&input.BaseUserData, log)
 	input.ControlPlane = true
 	input.EtcdadmJoinCommand = fmt.Sprintf("EtcdadmJoin %s %s %s", input.ImageRepository, input.Version, input.JoinAddress)
-	userData, err := generateUserData("JoinControlplane", etcdPlaneJoinCloudInit, input, &input.BaseUserData)
+	userData, err := generateUserData("JoinControlplane", etcdPlaneJoinCloudInit, input, &input.BaseUserData, config)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to generate user data for machine joining control plane")
 	}
