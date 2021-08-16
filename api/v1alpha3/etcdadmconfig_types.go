@@ -61,11 +61,8 @@ type EtcdadmConfigSpec struct {
 }
 
 type BottlerocketConfig struct {
-	// EtcdImageRepository specifies where etcdadm can pull etcd images from
-	EtcdImageRepository string `json:"etcdimageRepository,omitempty"`
-
-	// EtcdImageTag specifies the etcd image version to use by etcdadm
-	EtcdImageTag string `json:"etcdimageTag,omitempty"`
+	// EtcdImage specifies the etcd image to use by etcdadm
+	EtcdImage string `json:"etcdImage,omitempty"`
 
 	// BootstrapImage specifies the container image to use for bottlerocket's bootstrapping
 	BootstrapImage string `json:"bootstrapImage"`

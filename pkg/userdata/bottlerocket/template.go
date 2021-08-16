@@ -22,7 +22,7 @@ var defaultTemplateFuncMap = template.FuncMap{
 	"Indent": userdata.TemplateYAMLIndent,
 }
 
-func generateUserData(kind string, tpl string, data interface{}, input *userdata.BaseUserData, config *bootstrapv1alpha3.BottlerocketConfig) ([]byte, error) {
+func generateUserData(kind string, tpl string, data interface{}, input *userdata.BaseUserData, config bootstrapv1alpha3.BottlerocketConfig) ([]byte, error) {
 	bootstrapContainerUserData, err := generateBootstrapContainerUserData(kind, tpl, data)
 	if err != nil {
 		return nil, err

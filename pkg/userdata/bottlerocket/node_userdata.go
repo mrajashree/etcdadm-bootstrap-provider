@@ -56,7 +56,7 @@ type hostPath struct {
 }
 
 // generateBottlerocketNodeUserData returns the userdata for the host bottlerocket in toml format
-func generateBottlerocketNodeUserData(bootstrapContainerUserData []byte, users []bootstrapv1.User, config *bootstrapv1alpha3.BottlerocketConfig) ([]byte, error) {
+func generateBottlerocketNodeUserData(bootstrapContainerUserData []byte, users []bootstrapv1.User, config bootstrapv1alpha3.BottlerocketConfig) ([]byte, error) {
 	// base64 encode the bootstrapContainer's user data
 	b64BootstrapContainerUserData := base64.StdEncoding.EncodeToString(bootstrapContainerUserData)
 

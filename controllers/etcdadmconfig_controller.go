@@ -239,7 +239,6 @@ func (r *EtcdadmConfigReconciler) initializeEtcd(ctx context.Context, scope *Sco
 		BaseUserData: userdata.BaseUserData{
 			Users: scope.Config.Spec.Users,
 		},
-		EtcdadmArgs:  buildEtcdadmArgs(scope.Config.Spec),
 		Certificates: CACertKeyPair,
 	}
 
@@ -257,9 +256,9 @@ func (r *EtcdadmConfigReconciler) initializeEtcd(ctx context.Context, scope *Sco
 
 	switch scope.Config.Spec.Format {
 	case bootstrapv1alpha3.Bottlerocket:
-		bootstrapData, err = bottlerocket.NewInitEtcdPlane(&initInput, scope.Config.Spec.BottlerocketConfig, log)
+		bootstrapData, err = bottlerocket.NewInitEtcdPlane(&initInput, *scope.Config.Spec.BottlerocketConfig, log)
 	default:
-		bootstrapData, err = cloudinit.NewInitEtcdPlane(&initInput)
+		bootstrapData, err = cloudinit.NewInitEtcdPlane(&initInput, *scope.Config.Spec.CloudConfigConfig)
 	}
 	if err != nil {
 		log.Error(err, "Failed to generate cloud init for initializing etcd plane")
@@ -303,7 +302,6 @@ func (r *EtcdadmConfigReconciler) joinEtcd(ctx context.Context, scope *Scope) (_
 			Users: scope.Config.Spec.Users,
 		},
 		JoinAddress:  joinAddress,
-		EtcdadmArgs:  buildEtcdadmArgs(scope.Config.Spec),
 		Certificates: etcdCerts,
 	}
 
@@ -320,9 +318,9 @@ func (r *EtcdadmConfigReconciler) joinEtcd(ctx context.Context, scope *Scope) (_
 
 	switch scope.Config.Spec.Format {
 	case bootstrapv1alpha3.Bottlerocket:
-		bootstrapData, err = bottlerocket.NewJoinEtcdPlane(&joinInput, scope.Config.Spec.BottlerocketConfig, log)
+		bootstrapData, err = bottlerocket.NewJoinEtcdPlane(&joinInput, *scope.Config.Spec.BottlerocketConfig, log)
 	default:
-		bootstrapData, err = cloudinit.NewJoinEtcdPlane(&joinInput)
+		bootstrapData, err = cloudinit.NewJoinEtcdPlane(&joinInput, *scope.Config.Spec.CloudConfigConfig)
 	}
 	if err != nil {
 		log.Error(err, "Failed to generate cloud init for bootstrap etcd plane - join")
@@ -392,17 +390,4 @@ func (r *EtcdadmConfigReconciler) storeBootstrapData(ctx context.Context, config
 	config.Status.Ready = true
 	conditions.MarkTrue(config, bootstrapv1.DataSecretAvailableCondition)
 	return nil
-}
-
-func buildEtcdadmArgs(spec bootstrapv1alpha3.EtcdadmConfigSpec) userdata.EtcdadmArgs {
-	etcdadmArgs := userdata.EtcdadmArgs{}
-	if spec.CloudConfigConfig != nil {
-		etcdadmArgs.Version = spec.CloudConfigConfig.Version
-		etcdadmArgs.EtcdReleaseURL = spec.CloudConfigConfig.EtcdReleaseURL
-	} else if spec.BottlerocketConfig != nil {
-		etcdadmArgs.Version = spec.BottlerocketConfig.EtcdImageTag
-		etcdadmArgs.ImageRepository = spec.BottlerocketConfig.EtcdImageRepository
-	}
-
-	return etcdadmArgs
 }

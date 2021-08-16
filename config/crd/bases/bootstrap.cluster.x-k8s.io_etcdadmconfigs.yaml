@@ -44,13 +44,8 @@ spec:
                     description: BootstrapImage specifies the container image to use
                       for bottlerocket's bootstrapping
                     type: string
-                  etcdimageRepository:
-                    description: EtcdImageRepository specifies where etcdadm can pull
-                      etcd images from
-                    type: string
-                  etcdimageTag:
-                    description: EtcdImageTag specifies the etcd image version to
-                      use by etcdadm
+                  etcdImage:
+                    description: EtcdImage specifies the etcd image to use by etcdadm
                     type: string
                 required:
                 - bootstrapImage

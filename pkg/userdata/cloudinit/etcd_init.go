@@ -16,7 +16,10 @@ limitations under the License.
 
 package cloudinit
 
-import "github.com/mrajashree/etcdadm-bootstrap-provider/pkg/userdata"
+import (
+	bootstrapv1alpha3 "github.com/mrajashree/etcdadm-bootstrap-provider/api/v1alpha3"
+	"github.com/mrajashree/etcdadm-bootstrap-provider/pkg/userdata"
+)
 
 const (
 	etcdPlaneCloudInit = `{{.Header}}
@@ -38,11 +41,12 @@ runcmd:
 )
 
 // NewInitEtcdPlane returns the user data string to be used on a etcd instance.
-func NewInitEtcdPlane(input *userdata.EtcdPlaneInput) ([]byte, error) {
+func NewInitEtcdPlane(input *userdata.EtcdPlaneInput, config bootstrapv1alpha3.CloudConfigConfig) ([]byte, error) {
 	input.Header = cloudConfigHeader
 	input.WriteFiles = input.Certificates.AsFiles()
 	input.WriteFiles = append(input.WriteFiles, input.AdditionalFiles...)
 	input.SentinelFileCommand = sentinelFileCommand
+	input.EtcdadmArgs = buildEtcdadmArgs(config)
 	input.EtcdadmInitCommand = userdata.AddSystemdArgsToCommand(standardInitCommand, &input.EtcdadmArgs)
 	userData, err := generate("InitEtcdplane", etcdPlaneCloudInit, input)
 	if err != nil {
