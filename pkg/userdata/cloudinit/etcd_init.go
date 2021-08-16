@@ -41,7 +41,7 @@ runcmd:
 )
 
 // NewInitEtcdPlane returns the user data string to be used on a etcd instance.
-func NewInitEtcdPlane(input *userdata.EtcdPlaneInput, config bootstrapv1alpha3.CloudConfigConfig) ([]byte, error) {
+func NewInitEtcdPlane(input *userdata.EtcdPlaneInput, config bootstrapv1alpha3.CloudInitConfig) ([]byte, error) {
 	input.Header = cloudConfigHeader
 	input.WriteFiles = input.Certificates.AsFiles()
 	input.WriteFiles = append(input.WriteFiles, input.AdditionalFiles...)

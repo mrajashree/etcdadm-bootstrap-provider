@@ -50,9 +50,9 @@ spec:
                 required:
                 - bootstrapImage
                 type: object
-              cloudConfigConfig:
-                description: CloudConfigConfig specifies the configuration for the
-                  cloud-init bootstrap data
+              cloudInitConfig:
+                description: CloudInitConfig specifies the configuration for the cloud-init
+                  bootstrap data
                 properties:
                   etcdReleaseURL:
                     description: EtcdReleaseURL is an optional field to specify where

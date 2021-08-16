@@ -74,7 +74,7 @@ func prepare(input *userdata.BaseUserData) error {
 	return nil
 }
 
-func buildEtcdadmArgs(config bootstrapv1alpha3.CloudConfigConfig) userdata.EtcdadmArgs {
+func buildEtcdadmArgs(config bootstrapv1alpha3.CloudInitConfig) userdata.EtcdadmArgs {
 	return userdata.EtcdadmArgs{
 		Version:        config.Version,
 		EtcdReleaseURL: config.EtcdReleaseURL,

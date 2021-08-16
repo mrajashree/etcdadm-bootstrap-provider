@@ -28,7 +28,7 @@ runcmd:
 )
 
 // NewJoinControlPlane returns the user data string to be used on a new control plane instance.
-func NewJoinEtcdPlane(input *userdata.EtcdPlaneJoinInput, config bootstrapv1alpha3.CloudConfigConfig) ([]byte, error) {
+func NewJoinEtcdPlane(input *userdata.EtcdPlaneJoinInput, config bootstrapv1alpha3.CloudInitConfig) ([]byte, error) {
 	input.WriteFiles = input.Certificates.AsFiles()
 	input.ControlPlane = true
 	input.EtcdadmJoinCommand = userdata.AddSystemdArgsToCommand(fmt.Sprintf(standardJoinCommand, input.JoinAddress), &input.EtcdadmArgs)
