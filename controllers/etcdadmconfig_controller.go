@@ -243,11 +243,11 @@ func (r *EtcdadmConfigReconciler) initializeEtcd(ctx context.Context, scope *Sco
 	}
 
 	// only do this if etcdadm not baked in image
-	if !scope.Config.Spec.EtcdadmBuiltin && scope.Config.Spec.CloudConfigConfig != nil {
-		if len(scope.Config.Spec.CloudConfigConfig.EtcdadmInstallCommands) > 0 {
-			initInput.PreEtcdadmCommands = append(scope.Config.Spec.CloudConfigConfig.PreEtcdadmCommands, scope.Config.Spec.CloudConfigConfig.EtcdadmInstallCommands...)
+	if !scope.Config.Spec.EtcdadmBuiltin {
+		if len(scope.Config.Spec.EtcdadmInstallCommands) > 0 {
+			initInput.PreEtcdadmCommands = append(scope.Config.Spec.PreEtcdadmCommands, scope.Config.Spec.EtcdadmInstallCommands...)
 		} else {
-			initInput.PreEtcdadmCommands = append(scope.Config.Spec.CloudConfigConfig.PreEtcdadmCommands, defaultEtcdadmInstallCommands...)
+			initInput.PreEtcdadmCommands = append(scope.Config.Spec.PreEtcdadmCommands, defaultEtcdadmInstallCommands...)
 		}
 	}
 
@@ -306,10 +306,10 @@ func (r *EtcdadmConfigReconciler) joinEtcd(ctx context.Context, scope *Scope) (_
 	}
 
 	if !scope.Config.Spec.EtcdadmBuiltin {
-		if len(scope.Config.Spec.CloudConfigConfig.EtcdadmInstallCommands) > 0 {
-			joinInput.PreEtcdadmCommands = append(scope.Config.Spec.CloudConfigConfig.PreEtcdadmCommands, scope.Config.Spec.CloudConfigConfig.EtcdadmInstallCommands...)
+		if len(scope.Config.Spec.EtcdadmInstallCommands) > 0 {
+			joinInput.PreEtcdadmCommands = append(scope.Config.Spec.PreEtcdadmCommands, scope.Config.Spec.EtcdadmInstallCommands...)
 		} else {
-			joinInput.PreEtcdadmCommands = append(scope.Config.Spec.CloudConfigConfig.PreEtcdadmCommands, defaultEtcdadmInstallCommands...)
+			joinInput.PreEtcdadmCommands = append(scope.Config.Spec.PreEtcdadmCommands, defaultEtcdadmInstallCommands...)
 		}
 	}
 

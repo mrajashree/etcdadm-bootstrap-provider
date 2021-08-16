@@ -45,6 +45,17 @@ type EtcdadmConfigSpec struct {
 	EtcdadmBuiltin bool `json:"etcdadmBuiltin,omitempty"`
 
 	// +optional
+	EtcdadmInstallCommands []string `json:"etcdadmInstallCommands,omitempty"`
+
+	// PreEtcdadmCommands specifies extra commands to run before kubeadm runs
+	// +optional
+	PreEtcdadmCommands []string `json:"preEtcdadmCommands,omitempty"`
+
+	// PostEtcdadmCommands specifies extra commands to run after kubeadm runs
+	// +optional
+	PostEtcdadmCommands []string `json:"postEtcdadmCommands,omitempty"`
+
+	// +optional
 	// EtcdadmArgs map[string]interface{} `json:"etcdadmArgs,omitempty"`
 
 	// Format specifies the output format of the bootstrap data
@@ -68,17 +79,6 @@ type BottlerocketConfig struct {
 	BootstrapImage string `json:"bootstrapImage"`
 }
 type CloudConfigConfig struct {
-	// +optional
-	EtcdadmInstallCommands []string `json:"etcdadmInstallCommands,omitempty"`
-
-	// PreEtcdadmCommands specifies extra commands to run before kubeadm runs
-	// +optional
-	PreEtcdadmCommands []string `json:"preEtcdadmCommands,omitempty"`
-
-	// PostEtcdadmCommands specifies extra commands to run after kubeadm runs
-	// +optional
-	PostEtcdadmCommands []string `json:"postEtcdadmCommands,omitempty"`
-
 	// +optional
 	Version string `json:"version,omitempty"`
 

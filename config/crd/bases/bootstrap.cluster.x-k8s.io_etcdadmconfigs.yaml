@@ -58,33 +58,33 @@ spec:
                     description: EtcdReleaseURL is an optional field to specify where
                       etcdadm can download etcd from
                     type: string
-                  etcdadmInstallCommands:
-                    items:
-                      type: string
-                    type: array
-                  postEtcdadmCommands:
-                    description: PostEtcdadmCommands specifies extra commands to run
-                      after kubeadm runs
-                    items:
-                      type: string
-                    type: array
-                  preEtcdadmCommands:
-                    description: PreEtcdadmCommands specifies extra commands to run
-                      before kubeadm runs
-                    items:
-                      type: string
-                    type: array
                   version:
                     type: string
                 type: object
               etcdadmBuiltin:
                 type: boolean
+              etcdadmInstallCommands:
+                items:
+                  type: string
+                type: array
               format:
                 description: Format specifies the output format of the bootstrap data
                 enum:
                 - cloud-config
                 - bottlerocket
                 type: string
+              postEtcdadmCommands:
+                description: PostEtcdadmCommands specifies extra commands to run after
+                  kubeadm runs
+                items:
+                  type: string
+                type: array
+              preEtcdadmCommands:
+                description: PreEtcdadmCommands specifies extra commands to run before
+                  kubeadm runs
+                items:
+                  type: string
+                type: array
               users:
                 description: Users specifies extra users to add
                 items:
