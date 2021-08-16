@@ -288,11 +288,13 @@ func (r *EtcdadmConfigReconciler) joinEtcd(ctx context.Context, scope *Scope) (_
 	log.Info("Machine Controller has set address on init machine")
 
 	etcdCerts := etcdCACertKeyPair()
-	_ = etcdCerts.Lookup(
+	if err := etcdCerts.Lookup(
 		ctx,
 		r.Client,
 		util.ObjectKey(scope.Cluster),
-	)
+	); err != nil {
+		return ctrl.Result{}, errors.Wrap(err, "failed doing a lookup for certs during join")
+	}
 
 	initMachineAddress := string(existingSecret.Data["address"])
 	joinAddress := fmt.Sprintf("https://%v:2379", initMachineAddress)
