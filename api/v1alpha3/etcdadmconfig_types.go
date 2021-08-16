@@ -55,9 +55,6 @@ type EtcdadmConfigSpec struct {
 	// +optional
 	PostEtcdadmCommands []string `json:"postEtcdadmCommands,omitempty"`
 
-	// +optional
-	// EtcdadmArgs map[string]interface{} `json:"etcdadmArgs,omitempty"`
-
 	// Format specifies the output format of the bootstrap data
 	// +optional
 	Format Format `json:"format,omitempty"`
