@@ -48,6 +48,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
+const stopKubeletCommand = "systemctl stop kubelet"
+
 // InitLocker is a lock that is used around etcdadm init
 type InitLocker interface {
 	Lock(ctx context.Context, cluster *clusterv1.Cluster, machine *clusterv1.Machine) bool
@@ -258,6 +260,7 @@ func (r *EtcdadmConfigReconciler) initializeEtcd(ctx context.Context, scope *Sco
 	case bootstrapv1alpha3.Bottlerocket:
 		bootstrapData, err = bottlerocket.NewInitEtcdPlane(&initInput, *scope.Config.Spec.BottlerocketConfig, log)
 	default:
+		initInput.PreEtcdadmCommands = append(initInput.PreEtcdadmCommands, stopKubeletCommand)
 		bootstrapData, err = cloudinit.NewInitEtcdPlane(&initInput, *scope.Config.Spec.CloudInitConfig)
 	}
 	if err != nil {
@@ -322,6 +325,7 @@ func (r *EtcdadmConfigReconciler) joinEtcd(ctx context.Context, scope *Scope) (_
 	case bootstrapv1alpha3.Bottlerocket:
 		bootstrapData, err = bottlerocket.NewJoinEtcdPlane(&joinInput, *scope.Config.Spec.BottlerocketConfig, log)
 	default:
+		joinInput.PreEtcdadmCommands = append(joinInput.PreEtcdadmCommands, stopKubeletCommand)
 		bootstrapData, err = cloudinit.NewJoinEtcdPlane(&joinInput, *scope.Config.Spec.CloudInitConfig)
 	}
 	if err != nil {
