@@ -47,7 +47,7 @@ func splitRepositoryAndTag(image string) (repository, tag string) {
 	if lastInd == len(image)-1 {
 		return image[:lastInd], ""
 	}
-	
+
 	return image[:lastInd], image[lastInd+1:]
 }
 
