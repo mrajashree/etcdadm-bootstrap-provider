@@ -78,5 +78,6 @@ func buildEtcdadmArgs(config bootstrapv1alpha3.CloudInitConfig) userdata.Etcdadm
 	return userdata.EtcdadmArgs{
 		Version:        config.Version,
 		EtcdReleaseURL: config.EtcdReleaseURL,
+		InstallDir:     config.InstallDir,
 	}
 }

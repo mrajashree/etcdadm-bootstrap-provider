@@ -46,6 +46,7 @@ type EtcdadmArgs struct {
 	Version         string
 	ImageRepository string
 	EtcdReleaseURL  string
+	InstallDir      string
 }
 
 func (args *EtcdadmArgs) SystemdFlags() []string {
@@ -56,6 +57,9 @@ func (args *EtcdadmArgs) SystemdFlags() []string {
 	}
 	if args.ImageRepository != "" {
 		flags = append(flags, fmt.Sprintf(" --release-url %s", args.EtcdReleaseURL))
+	}
+	if args.InstallDir != "" {
+		flags = append(flags, fmt.Sprintf("--install-dir %s", args.InstallDir))
 	}
 	return flags
 }
