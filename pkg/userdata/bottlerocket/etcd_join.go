@@ -28,7 +28,7 @@ func NewJoinEtcdPlane(input *userdata.EtcdPlaneJoinInput, config bootstrapv1alph
 	logIgnoredFields(&input.BaseUserData, log)
 	input.ControlPlane = true
 	input.EtcdadmJoinCommand = fmt.Sprintf("EtcdadmJoin %s %s %s", input.ImageRepository, input.Version, input.JoinAddress)
-	userData, err := generateUserData("JoinControlplane", etcdPlaneJoinCloudInit, input, &input.BaseUserData, config)
+	userData, err := generateUserData("JoinControlplane", etcdPlaneJoinCloudInit, input, &input.BaseUserData, config, log)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to generate user data for machine joining control plane")
 	}

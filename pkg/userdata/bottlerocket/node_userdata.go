@@ -3,10 +3,10 @@ package bottlerocket
 import (
 	"bytes"
 	"encoding/base64"
-	"fmt"
 	"strings"
 	"text/template"
 
+	"github.com/go-logr/logr"
 	bootstrapv1alpha3 "github.com/mrajashree/etcdadm-bootstrap-provider/api/v1alpha3"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1alpha3"
 
@@ -56,7 +56,7 @@ type hostPath struct {
 }
 
 // generateBottlerocketNodeUserData returns the userdata for the host bottlerocket in toml format
-func generateBottlerocketNodeUserData(bootstrapContainerUserData []byte, users []bootstrapv1.User, config bootstrapv1alpha3.BottlerocketConfig) ([]byte, error) {
+func generateBottlerocketNodeUserData(bootstrapContainerUserData []byte, users []bootstrapv1.User, config bootstrapv1alpha3.BottlerocketConfig, log logr.Logger) ([]byte, error) {
 	// base64 encode the bootstrapContainer's user data
 	b64BootstrapContainerUserData := base64.StdEncoding.EncodeToString(bootstrapContainerUserData)
 
@@ -80,7 +80,7 @@ func generateBottlerocketNodeUserData(bootstrapContainerUserData []byte, users [
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(string(bottlerocketNodeUserData))
+	log.Info("Generated bottlerocket bootstrap userdata", "bootstrapContainerImage", config.BootstrapImage)
 	return bottlerocketNodeUserData, nil
 }
 
