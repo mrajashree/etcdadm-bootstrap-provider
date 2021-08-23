@@ -24,7 +24,7 @@ func NewInitEtcdPlane(input *userdata.EtcdPlaneInput, config bootstrapv1alpha3.B
 	input.EtcdadmArgs = buildEtcdadmArgs(config)
 	logIgnoredFields(&input.BaseUserData, log)
 	input.EtcdadmInitCommand = fmt.Sprintf("EtcdadmInit %s %s", input.ImageRepository, input.Version)
-	userData, err := generateUserData("InitEtcdplane", etcdInitCloudInit, input, &input.BaseUserData, config)
+	userData, err := generateUserData("InitEtcdplane", etcdInitCloudInit, input, &input.BaseUserData, config, log)
 	if err != nil {
 		return nil, err
 	}
