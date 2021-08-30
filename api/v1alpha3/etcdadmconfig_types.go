@@ -74,7 +74,11 @@ type BottlerocketConfig struct {
 
 	// BootstrapImage specifies the container image to use for bottlerocket's bootstrapping
 	BootstrapImage string `json:"bootstrapImage"`
+
+	// PauseImage specifies the image to use for the pause container
+	PauseImage string `json:"pauseImage"`
 }
+
 type CloudInitConfig struct {
 	// +optional
 	Version string `json:"version,omitempty"`

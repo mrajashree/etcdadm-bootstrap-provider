@@ -26,6 +26,7 @@ cluster-domain = "cluster.local"
 standalone-mode = true
 authentication-mode = "tls"
 server-tls-bootstrap = false
+pod-infra-container-image = "{{.PauseContainerSource}}"
 {{- end -}}
 `
 	bootstrapHostContainerTemplate = `{{define "bootstrapHostContainerSettings" -}}
@@ -40,7 +41,7 @@ user-data = "{{.BootstrapContainerUserData}}"
 
 {{template "adminContainerInitSettings" .}}
 
-{{template "kubernetesInitSettings" }}
+{{template "kubernetesInitSettings" .}}
 `
 )
 
@@ -48,6 +49,7 @@ type bottlerocketSettingsInput struct {
 	BootstrapContainerUserData string
 	AdminContainerUserData     string
 	BootstrapContainerSource   string
+	PauseContainerSource       string
 }
 
 type hostPath struct {
@@ -74,6 +76,7 @@ func generateBottlerocketNodeUserData(bootstrapContainerUserData []byte, users [
 		BootstrapContainerUserData: b64BootstrapContainerUserData,
 		AdminContainerUserData:     b64AdminContainerUserData,
 		BootstrapContainerSource:   config.BootstrapImage,
+		PauseContainerSource:       config.PauseImage,
 	}
 
 	bottlerocketNodeUserData, err := generateNodeUserData("InitBottlerocketNode", bottlerocketNodeInitSettingsTemplate, bottlerocketInput)
