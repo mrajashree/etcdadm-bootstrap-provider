@@ -66,6 +66,20 @@ type EtcdadmConfigSpec struct {
 	// CloudInitConfig specifies the configuration for the cloud-init bootstrap data
 	// +optional
 	CloudInitConfig *CloudInitConfig `json:"cloudInitConfig,omitempty"`
+
+	// Files specifies extra files to be passed to user_data upon creation.
+	// +optional
+	Files []capbk.File `json:"files,omitempty"`
+
+	// Proxy holds the https and no proxy information
+	// This is only used for bottlerocket
+	// +optional
+	Proxy *ProxyConfiguration `json:"proxy,omitempty"`
+
+	// RegistryMirror holds the image registry mirror information
+	// This is only used for bottlerocket
+	// +optional
+	RegistryMirror *RegistryMirrorConfiguration `json:"registryMirror,omitempty"`
 }
 
 type BottlerocketConfig struct {
@@ -90,6 +104,27 @@ type CloudInitConfig struct {
 	// InstallDir is an optional field to specify where etcdadm will extract etcd binaries to
 	// +optional
 	InstallDir string `json:"installDir,omitempty"`
+}
+
+// ProxyConfiguration holds the settings for proxying bottlerocket services
+type ProxyConfiguration struct {
+	// HTTP Proxy
+	HTTPProxy string `json:"httpProxy,omitempty"`
+
+	// HTTPS proxy
+	HTTPSProxy string `json:"httpsProxy,omitempty"`
+
+	// No proxy, list of ips that should not use proxy
+	NoProxy []string `json:"noProxy,omitempty"`
+}
+
+// RegistryMirrorConfiguration holds the settings for image registry mirror
+type RegistryMirrorConfiguration struct {
+	// Endpoint defines the registry mirror endpoint to use for pulling images
+	Endpoint string `json:"endpoint,omitempty"`
+
+	// CACert defines the CA cert for the registry mirror
+	CACert string `json:"caCert,omitempty"`
 }
 
 // EtcdadmConfigStatus defines the observed state of EtcdadmConfig

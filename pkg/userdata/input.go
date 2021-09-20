@@ -8,7 +8,7 @@ import (
 	"sigs.k8s.io/cluster-api/util/secret"
 )
 
-// ControlPlaneInput defines the context to generate a controlplane instance user data.
+// EtcdPlaneInput defines the context to generate etcd instance user data for initializing etcd cluster.
 type EtcdPlaneInput struct {
 	BaseUserData
 	secret.Certificates

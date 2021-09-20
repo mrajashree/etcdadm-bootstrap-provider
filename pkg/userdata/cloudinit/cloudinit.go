@@ -2,11 +2,14 @@ package cloudinit
 
 import (
 	"bytes"
+	"fmt"
+	"strings"
 	"text/template"
 
 	bootstrapv1alpha3 "github.com/mrajashree/etcdadm-bootstrap-provider/api/v1alpha3"
 	"github.com/mrajashree/etcdadm-bootstrap-provider/pkg/userdata"
 	"github.com/pkg/errors"
+	capbk "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1alpha3"
 )
 
 const (
@@ -18,7 +21,26 @@ const (
 	cloudConfigHeader   = `## template: jinja
 #cloud-config
 `
+	proxyConf = `
+[Service]
+Environment="HTTP_PROXY={{.HTTPProxy}}"
+Environment="HTTPS_PROXY={{.HTTPSProxy}}"
+Environment="NO_PROXY={{ stringsJoin .NoProxy "," }}"
+`
+	registryMirrorConf = `
+[plugins."io.containerd.grpc.v1.cri".registry.mirrors]
+  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."public.ecr.aws"]
+    endpoint = ["https://{{.Endpoint}}"]
+  [plugins."io.containerd.grpc.v1.cri".registry.configs."{{.Endpoint}}".tls]
+  {{- if not .CACert }}
+    insecure_skip_verify = true
+  {{- else }}
+    ca_file = "/etc/containerd/certs.d/{{.Endpoint}}/ca.crt"
+  {{- end }}
+`
 )
+
+var containerdRestart = []string{"sudo systemctl daemon-reload", "sudo systemctl restart containerd"}
 
 var defaultTemplateFuncMap = template.FuncMap{
 	"Indent": userdata.TemplateYAMLIndent,
@@ -80,4 +102,62 @@ func buildEtcdadmArgs(config bootstrapv1alpha3.CloudInitConfig) userdata.Etcdadm
 		EtcdReleaseURL: config.EtcdReleaseURL,
 		InstallDir:     config.InstallDir,
 	}
+}
+
+func setProxy(proxy *bootstrapv1alpha3.ProxyConfiguration, input *userdata.BaseUserData) error {
+	if proxy == nil {
+		return nil
+	}
+	tmpl := template.New("proxy").Funcs(template.FuncMap{"stringsJoin": strings.Join})
+	t, err := tmpl.Parse(proxyConf)
+	if err != nil {
+		return fmt.Errorf("failed to parse proxy template: %v", err)
+	}
+
+	var out bytes.Buffer
+	if err = t.Execute(&out, proxy); err != nil {
+		return fmt.Errorf("error generating proxy config file: %v", err)
+	}
+
+	input.AdditionalFiles = append(input.AdditionalFiles, capbk.File{
+		Content: out.String(),
+		Owner:   "root:root",
+		Path:    "/etc/systemd/system/containerd.service.d/http-proxy.conf",
+	})
+
+	input.PreEtcdadmCommands = append(input.PreEtcdadmCommands, containerdRestart...)
+	return nil
+}
+
+func setRegistryMirror(registryMirror *bootstrapv1alpha3.RegistryMirrorConfiguration, input *userdata.BaseUserData) error {
+	if registryMirror == nil {
+		return nil
+	}
+	tmpl := template.New("registryMirror")
+	t, err := tmpl.Parse(registryMirrorConf)
+	if err != nil {
+		return fmt.Errorf("failed to parse registryMirror template: %v", err)
+	}
+
+	var out bytes.Buffer
+	if err = t.Execute(&out, registryMirror); err != nil {
+		return fmt.Errorf("error generating registryMirror config file: %v", err)
+	}
+
+	input.AdditionalFiles = append(input.AdditionalFiles,
+		capbk.File{
+			Content: registryMirror.CACert,
+			Owner:   "root:root",
+			Path:    fmt.Sprintf("/etc/containerd/certs.d/%s/ca.crt", registryMirror.Endpoint),
+		},
+		capbk.File{
+			Content: out.String(),
+			Owner:   "root:root",
+			Path:    "/etc/containerd/config_append.toml",
+		},
+	)
+
+	input.PreEtcdadmCommands = append(input.PreEtcdadmCommands, `cat /etc/containerd/config_append.toml >> /etc/containerd/config.toml`)
+	input.PreEtcdadmCommands = append(input.PreEtcdadmCommands, containerdRestart...)
+	return nil
 }

@@ -18,10 +18,10 @@ runcmd: "{{ .EtcdadmInitCommand }}"
 `
 
 // NewInitEtcdPlane returns the user data string to be used on a etcd instance.
-func NewInitEtcdPlane(input *userdata.EtcdPlaneInput, config bootstrapv1alpha3.BottlerocketConfig, log logr.Logger) ([]byte, error) {
+func NewInitEtcdPlane(input *userdata.EtcdPlaneInput, config bootstrapv1alpha3.EtcdadmConfigSpec, log logr.Logger) ([]byte, error) {
 	input.WriteFiles = input.Certificates.AsFiles()
 	prepare(&input.BaseUserData)
-	input.EtcdadmArgs = buildEtcdadmArgs(config)
+	input.EtcdadmArgs = buildEtcdadmArgs(*config.BottlerocketConfig)
 	logIgnoredFields(&input.BaseUserData, log)
 	input.EtcdadmInitCommand = fmt.Sprintf("EtcdadmInit %s %s", input.ImageRepository, input.Version)
 	userData, err := generateUserData("InitEtcdplane", etcdInitCloudInit, input, &input.BaseUserData, config, log)

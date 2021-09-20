@@ -42,13 +42,19 @@ runcmd:
 )
 
 // NewInitEtcdPlane returns the user data string to be used on a etcd instance.
-func NewInitEtcdPlane(input *userdata.EtcdPlaneInput, config bootstrapv1alpha3.CloudInitConfig) ([]byte, error) {
-	input.Header = cloudConfigHeader
+func NewInitEtcdPlane(input *userdata.EtcdPlaneInput, config bootstrapv1alpha3.EtcdadmConfigSpec) ([]byte, error) {
 	input.WriteFiles = input.Certificates.AsFiles()
-	input.WriteFiles = append(input.WriteFiles, input.AdditionalFiles...)
-	input.SentinelFileCommand = sentinelFileCommand
-	input.EtcdadmArgs = buildEtcdadmArgs(config)
+	input.EtcdadmArgs = buildEtcdadmArgs(*config.CloudInitConfig)
 	input.EtcdadmInitCommand = userdata.AddSystemdArgsToCommand(standardInitCommand, &input.EtcdadmArgs)
+	if err := setProxy(config.Proxy, &input.BaseUserData); err != nil {
+		return nil, err
+	}
+	if err := setRegistryMirror(config.RegistryMirror, &input.BaseUserData); err != nil {
+		return nil, err
+	}
+	if err := prepare(&input.BaseUserData); err != nil {
+		return nil, err
+	}
 	userData, err := generate("InitEtcdCluster", etcdPlaneCloudInit, input)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to generate user data for machine initializing etcd cluster")
