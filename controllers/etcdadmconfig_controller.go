@@ -258,10 +258,10 @@ func (r *EtcdadmConfigReconciler) initializeEtcd(ctx context.Context, scope *Sco
 
 	switch scope.Config.Spec.Format {
 	case bootstrapv1alpha3.Bottlerocket:
-		bootstrapData, err = bottlerocket.NewInitEtcdPlane(&initInput, *scope.Config.Spec.BottlerocketConfig, log)
+		bootstrapData, err = bottlerocket.NewInitEtcdPlane(&initInput, scope.Config.Spec, log)
 	default:
 		initInput.PreEtcdadmCommands = append(initInput.PreEtcdadmCommands, stopKubeletCommand)
-		bootstrapData, err = cloudinit.NewInitEtcdPlane(&initInput, *scope.Config.Spec.CloudInitConfig)
+		bootstrapData, err = cloudinit.NewInitEtcdPlane(&initInput, scope.Config.Spec)
 	}
 	if err != nil {
 		log.Error(err, "Failed to generate cloud init for initializing etcd plane")
@@ -323,10 +323,10 @@ func (r *EtcdadmConfigReconciler) joinEtcd(ctx context.Context, scope *Scope) (_
 
 	switch scope.Config.Spec.Format {
 	case bootstrapv1alpha3.Bottlerocket:
-		bootstrapData, err = bottlerocket.NewJoinEtcdPlane(&joinInput, *scope.Config.Spec.BottlerocketConfig, log)
+		bootstrapData, err = bottlerocket.NewJoinEtcdPlane(&joinInput, scope.Config.Spec, log)
 	default:
 		joinInput.PreEtcdadmCommands = append(joinInput.PreEtcdadmCommands, stopKubeletCommand)
-		bootstrapData, err = cloudinit.NewJoinEtcdPlane(&joinInput, *scope.Config.Spec.CloudInitConfig)
+		bootstrapData, err = cloudinit.NewJoinEtcdPlane(&joinInput, scope.Config.Spec)
 	}
 	if err != nil {
 		log.Error(err, "Failed to generate cloud init for bootstrap etcd plane - join")
