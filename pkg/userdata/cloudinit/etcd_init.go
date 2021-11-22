@@ -17,7 +17,7 @@ limitations under the License.
 package cloudinit
 
 import (
-	bootstrapv1alpha3 "github.com/mrajashree/etcdadm-bootstrap-provider/api/v1alpha3"
+	etcdbootstrapv1 "github.com/mrajashree/etcdadm-bootstrap-provider/api/v1beta1"
 	"github.com/mrajashree/etcdadm-bootstrap-provider/pkg/userdata"
 	"github.com/pkg/errors"
 )
@@ -42,7 +42,7 @@ runcmd:
 )
 
 // NewInitEtcdPlane returns the user data string to be used on a etcd instance.
-func NewInitEtcdPlane(input *userdata.EtcdPlaneInput, config bootstrapv1alpha3.EtcdadmConfigSpec) ([]byte, error) {
+func NewInitEtcdPlane(input *userdata.EtcdPlaneInput, config etcdbootstrapv1.EtcdadmConfigSpec) ([]byte, error) {
 	input.WriteFiles = input.Certificates.AsFiles()
 	input.EtcdadmArgs = buildEtcdadmArgs(*config.CloudInitConfig)
 	input.EtcdadmInitCommand = userdata.AddSystemdArgsToCommand(standardInitCommand, &input.EtcdadmArgs)

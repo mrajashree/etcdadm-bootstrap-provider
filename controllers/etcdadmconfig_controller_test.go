@@ -5,17 +5,16 @@ import (
 	"testing"
 	"time"
 
-	bootstrapv1alpha3 "github.com/mrajashree/etcdadm-bootstrap-provider/api/v1alpha3"
+	etcdbootstrapv1 "github.com/mrajashree/etcdadm-bootstrap-provider/api/v1beta1"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1alpha3"
-	"sigs.k8s.io/cluster-api/test/helpers"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/util/conditions"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -24,7 +23,7 @@ func setupScheme() *runtime.Scheme {
 	if err := clusterv1.AddToScheme(scheme); err != nil {
 		panic(err)
 	}
-	if err := bootstrapv1alpha3.AddToScheme(scheme); err != nil {
+	if err := etcdbootstrapv1.AddToScheme(scheme); err != nil {
 		panic(err)
 	}
 	if err := corev1.AddToScheme(scheme); err != nil {
@@ -38,7 +37,7 @@ func TestEtcdadmConfigReconciler_MachineToBootstrapMapFuncReturn(t *testing.T) {
 	g := NewWithT(t)
 
 	cluster := newCluster("external-etcd-cluster")
-	objs := []runtime.Object{cluster}
+	objs := []client.Object{cluster}
 	var expectedConfigName string
 
 	m := newMachine(cluster, "etcd-machine")
@@ -47,14 +46,12 @@ func TestEtcdadmConfigReconciler_MachineToBootstrapMapFuncReturn(t *testing.T) {
 	objs = append(objs, m, c)
 	expectedConfigName = configName
 
-	fakeClient := helpers.NewFakeClientWithScheme(setupScheme(), objs...)
+	fakeClient := fake.NewClientBuilder().WithObjects(objs...).Build()
 	reconciler := &EtcdadmConfigReconciler{
 		Log:    log.Log,
 		Client: fakeClient,
 	}
-	o := handler.MapObject{
-		Object: m,
-	}
+	o := m
 	configs := reconciler.MachineToBootstrapMapFunc(o)
 	g.Expect(configs[0].Name).To(Equal(expectedConfigName))
 }
@@ -66,8 +63,8 @@ func TestEtcdadmConfigReconciler_Reconcile_ReturnEarlyIfEtcdadmConfigIsReady(t *
 	config := newEtcdadmConfig(nil, "etcdadmConfig")
 	config.Status.Ready = true
 
-	objects := []runtime.Object{config}
-	myclient := helpers.NewFakeClientWithScheme(setupScheme(), objects...)
+	objects := []client.Object{config}
+	myclient := fake.NewClientBuilder().WithObjects(objects...).Build()
 
 	k := &EtcdadmConfigReconciler{
 		Log:    log.Log,
@@ -80,7 +77,7 @@ func TestEtcdadmConfigReconciler_Reconcile_ReturnEarlyIfEtcdadmConfigIsReady(t *
 			Namespace: "etcdadmConfig",
 		},
 	}
-	result, err := k.Reconcile(request)
+	result, err := k.Reconcile(ctx, request)
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(result.Requeue).To(BeFalse())
 	g.Expect(result.RequeueAfter).To(Equal(time.Duration(0)))
@@ -93,11 +90,11 @@ func TestEtcdadmConfigReconciler_Reconcile_ReturnNilIfReferencedMachineIsNotFoun
 	machine := newMachine(nil, "machine")
 	config := newEtcdadmConfig(machine, "etcdadmConfig")
 
-	objects := []runtime.Object{
+	objects := []client.Object{
 		// intentionally omitting machine
 		config,
 	}
-	myclient := helpers.NewFakeClientWithScheme(setupScheme(), objects...)
+	myclient := fake.NewClientBuilder().WithObjects(objects...).Build()
 
 	k := &EtcdadmConfigReconciler{
 		Log:    log.Log,
@@ -110,7 +107,7 @@ func TestEtcdadmConfigReconciler_Reconcile_ReturnNilIfReferencedMachineIsNotFoun
 			Name:      "etcdadmConfig",
 		},
 	}
-	_, err := k.Reconcile(request)
+	_, err := k.Reconcile(ctx, request)
 	g.Expect(err).To(BeNil())
 }
 
@@ -121,11 +118,11 @@ func TestEtcdadmConfigReconciler_Reconcile_ReturnEarlyIfMachineHasNoCluster(t *t
 	machine := newMachine(nil, "machine") // Machine without a cluster
 	config := newEtcdadmConfig(machine, "etcdadmConfig")
 
-	objects := []runtime.Object{
+	objects := []client.Object{
 		machine,
 		config,
 	}
-	myclient := helpers.NewFakeClientWithScheme(setupScheme(), objects...)
+	myclient := fake.NewClientBuilder().WithObjects(objects...).Build()
 
 	k := &EtcdadmConfigReconciler{
 		Log:    log.Log,
@@ -138,7 +135,7 @@ func TestEtcdadmConfigReconciler_Reconcile_ReturnEarlyIfMachineHasNoCluster(t *t
 			Name:      "etcdadmConfig",
 		},
 	}
-	_, err := k.Reconcile(request)
+	_, err := k.Reconcile(ctx, request)
 	g.Expect(err).NotTo(HaveOccurred())
 }
 
@@ -151,12 +148,12 @@ func TestEtcdadmConfigReconciler_Reconcile_ReturnEarlyIfClusterIsPaused(t *testi
 	machine := newMachine(cluster, "machine")
 	config := newEtcdadmConfig(machine, "etcdadmConfig")
 
-	objects := []runtime.Object{
+	objects := []client.Object{
 		cluster,
 		machine,
 		config,
 	}
-	myclient := helpers.NewFakeClientWithScheme(setupScheme(), objects...)
+	myclient := fake.NewClientBuilder().WithObjects(objects...).Build()
 
 	k := &EtcdadmConfigReconciler{
 		Log:    log.Log,
@@ -169,7 +166,7 @@ func TestEtcdadmConfigReconciler_Reconcile_ReturnEarlyIfClusterIsPaused(t *testi
 			Name:      "etcdadmConfig",
 		},
 	}
-	_, err := k.Reconcile(request)
+	_, err := k.Reconcile(ctx, request)
 	g.Expect(err).NotTo(HaveOccurred())
 }
 
@@ -181,12 +178,12 @@ func TestEtcdadmConfigReconciler_InitializeEtcdIfInitLockIsNotAquired(t *testing
 	machine := newMachine(cluster, "machine")
 	config := newEtcdadmConfig(machine, "etcdadmConfig")
 
-	objects := []runtime.Object{
+	objects := []client.Object{
 		cluster,
 		machine,
 		config,
 	}
-	myclient := helpers.NewFakeClientWithScheme(setupScheme(), objects...)
+	myclient := fake.NewClientBuilder().WithObjects(objects...).Build()
 
 	k := &EtcdadmConfigReconciler{
 		Log:             log.Log,
@@ -199,14 +196,14 @@ func TestEtcdadmConfigReconciler_InitializeEtcdIfInitLockIsNotAquired(t *testing
 			Name:      "etcdadmConfig",
 		},
 	}
-	result, err := k.Reconcile(request)
+	result, err := k.Reconcile(ctx, request)
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(result.Requeue).To(BeFalse())
 	g.Expect(result.RequeueAfter).To(BeZero())
 
-	configKey, _ := client.ObjectKeyFromObject(config)
+	configKey := client.ObjectKeyFromObject(config)
 	g.Expect(myclient.Get(context.TODO(), configKey, config)).To(Succeed())
-	c := conditions.Get(config, bootstrapv1alpha3.DataSecretAvailableCondition)
+	c := conditions.Get(config, etcdbootstrapv1.DataSecretAvailableCondition)
 	g.Expect(c).ToNot(BeNil())
 	g.Expect(c.Status).To(Equal(corev1.ConditionTrue))
 }
@@ -219,12 +216,12 @@ func TestEtcdadmConfigReconciler_RequeueIfInitLockIsAquired(t *testing.T) {
 	machine := newMachine(cluster, "machine")
 	config := newEtcdadmConfig(machine, "etcdadmConfig")
 
-	objects := []runtime.Object{
+	objects := []client.Object{
 		cluster,
 		machine,
 		config,
 	}
-	myclient := helpers.NewFakeClientWithScheme(setupScheme(), objects...)
+	myclient := fake.NewClientBuilder().WithObjects(objects...).Build()
 
 	k := &EtcdadmConfigReconciler{
 		Log:             log.Log,
@@ -237,11 +234,11 @@ func TestEtcdadmConfigReconciler_RequeueIfInitLockIsAquired(t *testing.T) {
 			Name:      "etcdadmConfig",
 		},
 	}
-	result, err := k.Reconcile(request)
+	result, err := k.Reconcile(ctx, request)
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(result.Requeue).To(BeFalse())
 	g.Expect(result.RequeueAfter).To(Equal(30 * time.Second))
-	c := conditions.Get(config, bootstrapv1alpha3.DataSecretAvailableCondition)
+	c := conditions.Get(config, etcdbootstrapv1.DataSecretAvailableCondition)
 	g.Expect(c).To(BeNil())
 }
 
@@ -253,12 +250,12 @@ func TestEtcdadmConfigReconciler_JoinMemberIfEtcdIsInitialized(t *testing.T) {
 	machine := newMachine(cluster, "machine")
 	config := newEtcdadmConfig(machine, "etcdadmConfig")
 
-	objects := []runtime.Object{
+	objects := []client.Object{
 		cluster,
 		machine,
 		config,
 	}
-	myclient := helpers.NewFakeClientWithScheme(setupScheme(), objects...)
+	myclient := fake.NewClientBuilder().WithObjects(objects...).Build()
 
 	k := &EtcdadmConfigReconciler{
 		Log:             log.Log,
@@ -271,14 +268,14 @@ func TestEtcdadmConfigReconciler_JoinMemberIfEtcdIsInitialized(t *testing.T) {
 			Name:      "etcdadmConfig",
 		},
 	}
-	result, err := k.Reconcile(request)
+	result, err := k.Reconcile(ctx, request)
 	g.Expect(err).NotTo(HaveOccurred())
 	g.Expect(result.Requeue).To(BeFalse())
 	g.Expect(result.RequeueAfter).To(BeZero())
 
-	configKey, _ := client.ObjectKeyFromObject(config)
+	configKey := client.ObjectKeyFromObject(config)
 	g.Expect(myclient.Get(context.TODO(), configKey, config)).To(Succeed())
-	c := conditions.Get(config, bootstrapv1alpha3.DataSecretAvailableCondition)
+	c := conditions.Get(config, etcdbootstrapv1.DataSecretAvailableCondition)
 	g.Expect(c).ToNot(BeNil())
 	g.Expect(c.Status).To(Equal(corev1.ConditionTrue))
 }
@@ -314,7 +311,7 @@ func newMachine(cluster *clusterv1.Cluster, name string) *clusterv1.Machine {
 			Bootstrap: clusterv1.Bootstrap{
 				ConfigRef: &corev1.ObjectReference{
 					Kind:       "EtcdadmConfig",
-					APIVersion: bootstrapv1alpha3.GroupVersion.String(),
+					APIVersion: etcdbootstrapv1.GroupVersion.String(),
 				},
 			},
 		},
@@ -329,18 +326,18 @@ func newMachine(cluster *clusterv1.Cluster, name string) *clusterv1.Machine {
 }
 
 // newEtcdadmConfig generates an EtcdadmConfig object for the external etcd cluster
-func newEtcdadmConfig(machine *clusterv1.Machine, name string) *bootstrapv1alpha3.EtcdadmConfig {
-	config := &bootstrapv1alpha3.EtcdadmConfig{
+func newEtcdadmConfig(machine *clusterv1.Machine, name string) *etcdbootstrapv1.EtcdadmConfig {
+	config := &etcdbootstrapv1.EtcdadmConfig{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "EtcdadmConfig",
-			APIVersion: bootstrapv1alpha3.GroupVersion.String(),
+			APIVersion: etcdbootstrapv1.GroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: "default",
 		},
-		Spec: bootstrapv1alpha3.EtcdadmConfigSpec{
-			CloudInitConfig: &bootstrapv1alpha3.CloudInitConfig{},
+		Spec: etcdbootstrapv1.EtcdadmConfigSpec{
+			CloudInitConfig: &etcdbootstrapv1.CloudInitConfig{},
 		},
 	}
 

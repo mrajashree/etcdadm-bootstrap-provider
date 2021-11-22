@@ -20,14 +20,16 @@ import (
 	"flag"
 	"os"
 
-	bootstrapv1alpha3 "github.com/mrajashree/etcdadm-bootstrap-provider/api/v1alpha3"
-	"github.com/mrajashree/etcdadm-bootstrap-provider/controllers"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1alpha3"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	bootstrapv1alpha3 "github.com/mrajashree/etcdadm-bootstrap-provider/api/v1alpha3"
+	bootstrapv1beta1 "github.com/mrajashree/etcdadm-bootstrap-provider/api/v1beta1"
+	"github.com/mrajashree/etcdadm-bootstrap-provider/controllers"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -42,6 +44,7 @@ func init() {
 
 	_ = clusterv1.AddToScheme(scheme)
 	_ = bootstrapv1alpha3.AddToScheme(scheme)
+	_ = bootstrapv1beta1.AddToScheme(scheme)
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -77,8 +80,13 @@ func main() {
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("EtcdadmConfig"),
 		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
+	}).SetupWithManager(ctx, mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "EtcdadmConfig")
+		os.Exit(1)
+	}
+
+	if err = (&bootstrapv1beta1.EtcdadmConfig{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "EtcdadmConfig")
 		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder

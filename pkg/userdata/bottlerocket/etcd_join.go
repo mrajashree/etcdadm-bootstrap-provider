@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	bootstrapv1alpha3 "github.com/mrajashree/etcdadm-bootstrap-provider/api/v1alpha3"
+	etcdbootstrapv1 "github.com/mrajashree/etcdadm-bootstrap-provider/api/v1beta1"
 	"github.com/mrajashree/etcdadm-bootstrap-provider/pkg/userdata"
 	"github.com/pkg/errors"
 )
@@ -21,7 +21,7 @@ runcmd: "{{ .EtcdadmJoinCommand }}"
 )
 
 // NewJoinControlPlane returns the user data string to be used on a new control plane instance.
-func NewJoinEtcdPlane(input *userdata.EtcdPlaneJoinInput, config bootstrapv1alpha3.EtcdadmConfigSpec, log logr.Logger) ([]byte, error) {
+func NewJoinEtcdPlane(input *userdata.EtcdPlaneJoinInput, config etcdbootstrapv1.EtcdadmConfigSpec, log logr.Logger) ([]byte, error) {
 	input.WriteFiles = input.Certificates.AsFiles()
 	prepare(&input.BaseUserData)
 	input.EtcdadmArgs = buildEtcdadmArgs(*config.BottlerocketConfig)

@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
-	bootstrapv1alpha3 "github.com/mrajashree/etcdadm-bootstrap-provider/api/v1alpha3"
+	etcdbootstrapv1 "github.com/mrajashree/etcdadm-bootstrap-provider/api/v1beta1"
 	"github.com/mrajashree/etcdadm-bootstrap-provider/pkg/userdata"
 )
 
@@ -30,7 +30,7 @@ func patchCertPaths(input *userdata.BaseUserData) {
 	}
 }
 
-func buildEtcdadmArgs(config bootstrapv1alpha3.BottlerocketConfig) userdata.EtcdadmArgs {
+func buildEtcdadmArgs(config etcdbootstrapv1.BottlerocketConfig) userdata.EtcdadmArgs {
 	repository, tag := splitRepositoryAndTag(config.EtcdImage)
 	return userdata.EtcdadmArgs{
 		Version:         strings.TrimPrefix(tag, "v"), // trim "v" to get pure simver because that's what etcdadm expects.

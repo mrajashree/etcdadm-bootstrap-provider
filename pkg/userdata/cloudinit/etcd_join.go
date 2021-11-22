@@ -3,7 +3,7 @@ package cloudinit
 import (
 	"fmt"
 
-	bootstrapv1alpha3 "github.com/mrajashree/etcdadm-bootstrap-provider/api/v1alpha3"
+	etcdbootstrapv1 "github.com/mrajashree/etcdadm-bootstrap-provider/api/v1beta1"
 	"github.com/mrajashree/etcdadm-bootstrap-provider/pkg/userdata"
 	"github.com/pkg/errors"
 )
@@ -28,7 +28,7 @@ runcmd:
 )
 
 // NewJoinControlPlane returns the user data string to be used on a new control plane instance.
-func NewJoinEtcdPlane(input *userdata.EtcdPlaneJoinInput, config bootstrapv1alpha3.EtcdadmConfigSpec) ([]byte, error) {
+func NewJoinEtcdPlane(input *userdata.EtcdPlaneJoinInput, config etcdbootstrapv1.EtcdadmConfigSpec) ([]byte, error) {
 	input.WriteFiles = input.Certificates.AsFiles()
 	input.EtcdadmArgs = buildEtcdadmArgs(*config.CloudInitConfig)
 	input.EtcdadmJoinCommand = userdata.AddSystemdArgsToCommand(fmt.Sprintf(standardJoinCommand, input.JoinAddress), &input.EtcdadmArgs)

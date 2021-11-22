@@ -8,9 +8,9 @@ import (
 	"text/template"
 
 	"github.com/go-logr/logr"
-	bootstrapv1alpha3 "github.com/mrajashree/etcdadm-bootstrap-provider/api/v1alpha3"
+	etcdbootstrapv1 "github.com/mrajashree/etcdadm-bootstrap-provider/api/v1beta1"
 	"github.com/pkg/errors"
-	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1alpha3"
+	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 )
 
 const (
@@ -92,7 +92,7 @@ type hostPath struct {
 }
 
 // generateBottlerocketNodeUserData returns the userdata for the host bottlerocket in toml format
-func generateBottlerocketNodeUserData(bootstrapContainerUserData []byte, users []bootstrapv1.User, config bootstrapv1alpha3.EtcdadmConfigSpec, log logr.Logger) ([]byte, error) {
+func generateBottlerocketNodeUserData(bootstrapContainerUserData []byte, users []bootstrapv1.User, config etcdbootstrapv1.EtcdadmConfigSpec, log logr.Logger) ([]byte, error) {
 	// base64 encode the bootstrapContainer's user data
 	b64BootstrapContainerUserData := base64.StdEncoding.EncodeToString(bootstrapContainerUserData)
 

@@ -6,10 +6,10 @@ import (
 	"strings"
 	"text/template"
 
-	bootstrapv1alpha3 "github.com/mrajashree/etcdadm-bootstrap-provider/api/v1alpha3"
+	etcdbootstrapv1 "github.com/mrajashree/etcdadm-bootstrap-provider/api/v1beta1"
 	"github.com/mrajashree/etcdadm-bootstrap-provider/pkg/userdata"
 	"github.com/pkg/errors"
-	capbk "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1alpha3"
+	capbk "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 )
 
 const (
@@ -96,7 +96,7 @@ func prepare(input *userdata.BaseUserData) error {
 	return nil
 }
 
-func buildEtcdadmArgs(config bootstrapv1alpha3.CloudInitConfig) userdata.EtcdadmArgs {
+func buildEtcdadmArgs(config etcdbootstrapv1.CloudInitConfig) userdata.EtcdadmArgs {
 	return userdata.EtcdadmArgs{
 		Version:        config.Version,
 		EtcdReleaseURL: config.EtcdReleaseURL,
@@ -104,7 +104,7 @@ func buildEtcdadmArgs(config bootstrapv1alpha3.CloudInitConfig) userdata.Etcdadm
 	}
 }
 
-func setProxy(proxy *bootstrapv1alpha3.ProxyConfiguration, input *userdata.BaseUserData) error {
+func setProxy(proxy *etcdbootstrapv1.ProxyConfiguration, input *userdata.BaseUserData) error {
 	if proxy == nil {
 		return nil
 	}
@@ -129,7 +129,7 @@ func setProxy(proxy *bootstrapv1alpha3.ProxyConfiguration, input *userdata.BaseU
 	return nil
 }
 
-func setRegistryMirror(registryMirror *bootstrapv1alpha3.RegistryMirrorConfiguration, input *userdata.BaseUserData) error {
+func setRegistryMirror(registryMirror *etcdbootstrapv1.RegistryMirrorConfiguration, input *userdata.BaseUserData) error {
 	if registryMirror == nil {
 		return nil
 	}

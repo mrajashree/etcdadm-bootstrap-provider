@@ -23,7 +23,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	bootstrapv1alpha3 "github.com/mrajashree/etcdadm-bootstrap-provider/api/v1alpha3"
+	etcdbootstrapv1 "github.com/mrajashree/etcdadm-bootstrap-provider/api/v1beta1"
 	"github.com/mrajashree/etcdadm-bootstrap-provider/internal/locking"
 	"github.com/mrajashree/etcdadm-bootstrap-provider/pkg/userdata"
 	"github.com/mrajashree/etcdadm-bootstrap-provider/pkg/userdata/bottlerocket"
@@ -34,8 +34,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/pointer"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1alpha3"
-	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1alpha3"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	"sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/cluster-api/util/annotations"
 	"sigs.k8s.io/cluster-api/util/conditions"
@@ -70,24 +70,22 @@ type EtcdadmConfigReconciler struct {
 
 type Scope struct {
 	logr.Logger
-	Config  *bootstrapv1alpha3.EtcdadmConfig
+	Config  *etcdbootstrapv1.EtcdadmConfig
 	Cluster *clusterv1.Cluster
 	Machine *clusterv1.Machine
 }
 
-func (r *EtcdadmConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *EtcdadmConfigReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
 	if r.EtcdadmInitLock == nil {
-		r.EtcdadmInitLock = locking.NewEtcdadmInitMutex(r.Log.WithName("etcd-init-locker"), mgr.GetClient())
+		r.EtcdadmInitLock = locking.NewEtcdadmInitMutex(ctrl.LoggerFrom(ctx).WithName("etcd-init-locker"), mgr.GetClient())
 	}
 
 	b := ctrl.NewControllerManagedBy(mgr).
-		For(&bootstrapv1alpha3.EtcdadmConfig{}).
+		For(&etcdbootstrapv1.EtcdadmConfig{}).
 		WithEventFilter(predicates.ResourceNotPaused(r.Log)).
 		Watches(
 			&source.Kind{Type: &clusterv1.Machine{}},
-			&handler.EnqueueRequestsFromMapFunc{
-				ToRequests: handler.ToRequestsFunc(r.MachineToBootstrapMapFunc),
-			},
+			handler.EnqueueRequestsFromMapFunc(r.MachineToBootstrapMapFunc),
 		)
 
 	c, err := b.Build(r)
@@ -97,9 +95,7 @@ func (r *EtcdadmConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 	err = c.Watch(
 		&source.Kind{Type: &clusterv1.Cluster{}},
-		&handler.EnqueueRequestsFromMapFunc{
-			ToRequests: handler.ToRequestsFunc(r.ClusterToEtcdadmConfigs),
-		},
+		handler.EnqueueRequestsFromMapFunc(r.ClusterToEtcdadmConfigs),
 		predicates.ClusterUnpausedAndInfrastructureReady(r.Log),
 	)
 	if err != nil {
@@ -113,12 +109,11 @@ func (r *EtcdadmConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
 // +kubebuilder:rbac:groups=cluster.x-k8s.io,resources=clusters;clusters/status;machines;machines/status,verbs=get;list;watch
 // +kubebuilder:rbac:groups="",resources=configmaps;events;secrets,verbs=get;list;watch;create;update;patch;delete
 
-func (r *EtcdadmConfigReconciler) Reconcile(req ctrl.Request) (_ ctrl.Result, rerr error) {
-	ctx := context.Background()
+func (r *EtcdadmConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_ ctrl.Result, rerr error) {
 	log := r.Log.WithValues("etcdadmconfig", req.Name, "namespace", req.Namespace)
 
 	// Lookup the etcdadm config
-	etcdadmConfig := &bootstrapv1alpha3.EtcdadmConfig{}
+	etcdadmConfig := &etcdbootstrapv1.EtcdadmConfig{}
 	if err := r.Client.Get(ctx, req.NamespacedName, etcdadmConfig); err != nil {
 		if apierrors.IsNotFound(err) {
 			return ctrl.Result{}, nil
@@ -172,7 +167,7 @@ func (r *EtcdadmConfigReconciler) Reconcile(req ctrl.Request) (_ ctrl.Result, re
 		// always update the readyCondition; the summary is represented using the "1 of x completed" notation.
 		conditions.SetSummary(etcdadmConfig,
 			conditions.WithConditions(
-				bootstrapv1alpha3.DataSecretAvailableCondition,
+				etcdbootstrapv1.DataSecretAvailableCondition,
 			),
 		)
 		// Patch ObservedGeneration only if the reconciliation completed successfully
@@ -234,7 +229,7 @@ func (r *EtcdadmConfigReconciler) initializeEtcd(ctx context.Context, scope *Sco
 		ctx,
 		r.Client,
 		util.ObjectKey(scope.Cluster),
-		*metav1.NewControllerRef(scope.Config, bootstrapv1alpha3.GroupVersion.WithKind("EtcdadmConfig")),
+		*metav1.NewControllerRef(scope.Config, etcdbootstrapv1.GroupVersion.WithKind("EtcdadmConfig")),
 	)
 
 	initInput := userdata.EtcdPlaneInput{
@@ -257,7 +252,7 @@ func (r *EtcdadmConfigReconciler) initializeEtcd(ctx context.Context, scope *Sco
 	var err error
 
 	switch scope.Config.Spec.Format {
-	case bootstrapv1alpha3.Bottlerocket:
+	case etcdbootstrapv1.Bottlerocket:
 		bootstrapData, err = bottlerocket.NewInitEtcdPlane(&initInput, scope.Config.Spec, log)
 	default:
 		initInput.PreEtcdadmCommands = append(initInput.PreEtcdadmCommands, stopKubeletCommand)
@@ -322,7 +317,7 @@ func (r *EtcdadmConfigReconciler) joinEtcd(ctx context.Context, scope *Scope) (_
 	var err error
 
 	switch scope.Config.Spec.Format {
-	case bootstrapv1alpha3.Bottlerocket:
+	case etcdbootstrapv1.Bottlerocket:
 		bootstrapData, err = bottlerocket.NewJoinEtcdPlane(&joinInput, scope.Config.Spec, log)
 	default:
 		joinInput.PreEtcdadmCommands = append(joinInput.PreEtcdadmCommands, stopKubeletCommand)
@@ -355,7 +350,7 @@ func etcdCACertKeyPair() secret.Certificates {
 
 // storeBootstrapData creates a new secret with the data passed in as input,
 // sets the reference in the configuration status and ready to true.
-func (r *EtcdadmConfigReconciler) storeBootstrapData(ctx context.Context, config *bootstrapv1alpha3.EtcdadmConfig, data []byte, clusterName string) error {
+func (r *EtcdadmConfigReconciler) storeBootstrapData(ctx context.Context, config *etcdbootstrapv1.EtcdadmConfig, data []byte, clusterName string) error {
 	log := r.Log
 
 	se := &corev1.Secret{
@@ -367,7 +362,7 @@ func (r *EtcdadmConfigReconciler) storeBootstrapData(ctx context.Context, config
 			},
 			OwnerReferences: []metav1.OwnerReference{
 				{
-					APIVersion: bootstrapv1alpha3.GroupVersion.String(),
+					APIVersion: etcdbootstrapv1.GroupVersion.String(),
 					Kind:       config.Kind,
 					Name:       config.Name,
 					UID:        config.UID,

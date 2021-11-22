@@ -14,12 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha3
+package v1beta1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1alpha3"
-	capbk "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1alpha3"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	capbk "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 )
 
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
@@ -34,6 +34,9 @@ const (
 // Format specifies the output format of the bootstrap data
 // +kubebuilder:validation:Enum=cloud-config;bottlerocket
 type Format string
+
+// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
+// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 // EtcdadmConfigSpec defines the desired state of EtcdadmConfig
 type EtcdadmConfigSpec struct {
@@ -138,15 +141,8 @@ type EtcdadmConfigStatus struct {
 	Ready bool `json:"ready,omitempty"`
 }
 
-func (c *EtcdadmConfig) GetConditions() clusterv1.Conditions {
-	return c.Status.Conditions
-}
-
-func (c *EtcdadmConfig) SetConditions(conditions clusterv1.Conditions) {
-	c.Status.Conditions = conditions
-}
-
 // +kubebuilder:object:root=true
+// +kubebuilder:storageversion
 // +kubebuilder:subresource:status
 // EtcdadmConfig is the Schema for the etcdadmconfigs API
 type EtcdadmConfig struct {
@@ -155,6 +151,14 @@ type EtcdadmConfig struct {
 
 	Spec   EtcdadmConfigSpec   `json:"spec,omitempty"`
 	Status EtcdadmConfigStatus `json:"status,omitempty"`
+}
+
+func (e *EtcdadmConfig) GetConditions() clusterv1.Conditions {
+	return e.Status.Conditions
+}
+
+func (e *EtcdadmConfig) SetConditions(conditions clusterv1.Conditions) {
+	e.Status.Conditions = conditions
 }
 
 // +kubebuilder:object:root=true
