@@ -32,7 +32,7 @@ func (r *EtcdadmConfig) SetupWebhookWithManager(mgr ctrl.Manager) error {
 		Complete()
 }
 
-// +kubebuilder:webhook:path=/mutate-bootstrap-cluster-x-k8s-io-cluster-x-k8s-io-v1beta1-etcdadmconfig,mutating=true,failurePolicy=fail,groups=bootstrap.cluster.x-k8s.io.cluster.x-k8s.io,resources=etcdadmconfigs,verbs=create;update,versions=v1beta1,name=metcdadmconfig.kb.io,sideEffects=None,admissionReviewVersions=v1;v1beta1
+// +kubebuilder:webhook:path=/mutate-bootstrap-cluster-x-k8s-io-v1beta1-etcdadmconfig,mutating=true,failurePolicy=fail,groups=bootstrap.cluster.x-k8s.io,resources=etcdadmconfigs,verbs=create;update,versions=v1beta1,name=metcdadmconfig.kb.io,sideEffects=None,admissionReviewVersions=v1;v1beta1
 
 var _ webhook.Defaulter = &EtcdadmConfig{}
 
@@ -44,7 +44,7 @@ func (r *EtcdadmConfig) Default() {
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:verbs=create;update,path=/validate-bootstrap-cluster-x-k8s-io-cluster-x-k8s-io-v1beta1-etcdadmconfig,mutating=false,failurePolicy=fail,groups=bootstrap.cluster.x-k8s.io.cluster.x-k8s.io,resources=etcdadmconfigs,versions=v1beta1,name=vetcdadmconfig.kb.io,sideEffects=None,admissionReviewVersions=v1;v1beta1
+// +kubebuilder:webhook:verbs=create;update,path=/validate-bootstrap-cluster-x-k8s-io-v1beta1-etcdadmconfig,mutating=false,failurePolicy=fail,groups=bootstrap.cluster.x-k8s.io,resources=etcdadmconfigs,versions=v1beta1,name=vetcdadmconfig.kb.io,sideEffects=None,admissionReviewVersions=v1;v1beta1
 
 var _ webhook.Validator = &EtcdadmConfig{}
 

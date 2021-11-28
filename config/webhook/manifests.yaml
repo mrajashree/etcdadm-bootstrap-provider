@@ -13,12 +13,12 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-bootstrap-cluster-x-k8s-io-cluster-x-k8s-io-v1beta1-etcdadmconfig
+      path: /mutate-bootstrap-cluster-x-k8s-io-v1beta1-etcdadmconfig
   failurePolicy: Fail
   name: metcdadmconfig.kb.io
   rules:
   - apiGroups:
-    - bootstrap.cluster.x-k8s.io.cluster.x-k8s.io
+    - bootstrap.cluster.x-k8s.io
     apiVersions:
     - v1beta1
     operations:
@@ -42,12 +42,12 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-bootstrap-cluster-x-k8s-io-cluster-x-k8s-io-v1beta1-etcdadmconfig
+      path: /validate-bootstrap-cluster-x-k8s-io-v1beta1-etcdadmconfig
   failurePolicy: Fail
   name: vetcdadmconfig.kb.io
   rules:
   - apiGroups:
-    - bootstrap.cluster.x-k8s.io.cluster.x-k8s.io
+    - bootstrap.cluster.x-k8s.io
     apiVersions:
     - v1beta1
     operations:
