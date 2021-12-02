@@ -96,11 +96,12 @@ func prepare(input *userdata.BaseUserData) error {
 	return nil
 }
 
-func buildEtcdadmArgs(config bootstrapv1alpha3.CloudInitConfig) userdata.EtcdadmArgs {
+func buildEtcdadmArgs(config bootstrapv1alpha3.EtcdadmConfigSpec) userdata.EtcdadmArgs {
 	return userdata.EtcdadmArgs{
-		Version:        config.Version,
-		EtcdReleaseURL: config.EtcdReleaseURL,
-		InstallDir:     config.InstallDir,
+		Version:        config.CloudInitConfig.Version,
+		EtcdReleaseURL: config.CloudInitConfig.EtcdReleaseURL,
+		InstallDir:     config.CloudInitConfig.InstallDir,
+		CipherSuites:   config.CipherSuites,
 	}
 }
 
