@@ -235,6 +235,7 @@ func autoConvert_v1alpha3_EtcdadmConfigSpec_To_v1beta1_EtcdadmConfigSpec(in *Etc
 	out.Files = *(*[]apiv1beta1.File)(unsafe.Pointer(&in.Files))
 	out.Proxy = (*v1beta1.ProxyConfiguration)(unsafe.Pointer(in.Proxy))
 	out.RegistryMirror = (*v1beta1.RegistryMirrorConfiguration)(unsafe.Pointer(in.RegistryMirror))
+	out.CipherSuites = in.CipherSuites
 	return nil
 }
 
@@ -255,6 +256,7 @@ func autoConvert_v1beta1_EtcdadmConfigSpec_To_v1alpha3_EtcdadmConfigSpec(in *v1b
 	out.Files = *(*[]apiv1alpha3.File)(unsafe.Pointer(&in.Files))
 	out.Proxy = (*ProxyConfiguration)(unsafe.Pointer(in.Proxy))
 	out.RegistryMirror = (*RegistryMirrorConfiguration)(unsafe.Pointer(in.RegistryMirror))
+	out.CipherSuites = in.CipherSuites
 	return nil
 }
 

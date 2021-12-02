@@ -80,6 +80,11 @@ type EtcdadmConfigSpec struct {
 	// This is only used for bottlerocket
 	// +optional
 	RegistryMirror *RegistryMirrorConfiguration `json:"registryMirror,omitempty"`
+
+	// CipherSuites is a list of comma-delimited supported TLS cipher suites, mapping to the --cipher-suites flag.
+	// Default is empty, which means that they will be auto-populated by Go.
+	// +optional
+	CipherSuites string `json:"cipherSuites,omitempty"`
 }
 
 type BottlerocketConfig struct {

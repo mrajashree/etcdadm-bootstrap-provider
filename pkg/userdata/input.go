@@ -47,6 +47,7 @@ type EtcdadmArgs struct {
 	ImageRepository string
 	EtcdReleaseURL  string
 	InstallDir      string
+	CipherSuites    string
 }
 
 func (args *EtcdadmArgs) SystemdFlags() []string {
@@ -60,6 +61,9 @@ func (args *EtcdadmArgs) SystemdFlags() []string {
 	}
 	if args.InstallDir != "" {
 		flags = append(flags, fmt.Sprintf("--install-dir %s", args.InstallDir))
+	}
+	if args.CipherSuites != "" {
+		flags = append(flags, fmt.Sprintf("--cipher-suites %s", args.CipherSuites))
 	}
 	return flags
 }
