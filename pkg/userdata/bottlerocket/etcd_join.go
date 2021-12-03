@@ -24,7 +24,7 @@ runcmd: "{{ .EtcdadmJoinCommand }}"
 func NewJoinEtcdPlane(input *userdata.EtcdPlaneJoinInput, config bootstrapv1alpha3.EtcdadmConfigSpec, log logr.Logger) ([]byte, error) {
 	input.WriteFiles = input.Certificates.AsFiles()
 	prepare(&input.BaseUserData)
-	input.EtcdadmArgs = buildEtcdadmArgs(*config.BottlerocketConfig)
+	input.EtcdadmArgs = buildEtcdadmArgs(config)
 	logIgnoredFields(&input.BaseUserData, log)
 	input.ControlPlane = true
 	input.EtcdadmJoinCommand = fmt.Sprintf("EtcdadmJoin %s %s %s", input.ImageRepository, input.Version, input.JoinAddress)

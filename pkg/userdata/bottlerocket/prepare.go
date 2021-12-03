@@ -30,11 +30,12 @@ func patchCertPaths(input *userdata.BaseUserData) {
 	}
 }
 
-func buildEtcdadmArgs(config bootstrapv1alpha3.BottlerocketConfig) userdata.EtcdadmArgs {
-	repository, tag := splitRepositoryAndTag(config.EtcdImage)
+func buildEtcdadmArgs(config bootstrapv1alpha3.EtcdadmConfigSpec) userdata.EtcdadmArgs {
+	repository, tag := splitRepositoryAndTag(config.BottlerocketConfig.EtcdImage)
 	return userdata.EtcdadmArgs{
 		Version:         strings.TrimPrefix(tag, "v"), // trim "v" to get pure simver because that's what etcdadm expects.
 		ImageRepository: repository,
+		CipherSuites:    config.CipherSuites,
 	}
 }
 
