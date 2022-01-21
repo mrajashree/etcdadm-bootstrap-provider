@@ -57,7 +57,7 @@ func (args *EtcdadmArgs) SystemdFlags() []string {
 		flags = append(flags, fmt.Sprintf("--version %s", args.Version))
 	}
 	if args.ImageRepository != "" {
-		flags = append(flags, fmt.Sprintf(" --release-url %s", args.EtcdReleaseURL))
+		flags = append(flags, fmt.Sprintf("--release-url %s", args.EtcdReleaseURL))
 	}
 	if args.InstallDir != "" {
 		flags = append(flags, fmt.Sprintf("--install-dir %s", args.InstallDir))
