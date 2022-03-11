@@ -294,8 +294,13 @@ func (r *EtcdadmConfigReconciler) joinEtcd(ctx context.Context, scope *Scope) (_
 		return ctrl.Result{}, errors.Wrap(err, "failed doing a lookup for certs during join")
 	}
 
-	initMachineAddress := string(existingSecret.Data["address"])
-	joinAddress := fmt.Sprintf("https://%v:2379", initMachineAddress)
+	var joinAddress string
+	if clientURL, ok := existingSecret.Data["clientUrls"]; ok {
+		joinAddress = string(clientURL)
+	} else {
+		initMachineAddress := string(existingSecret.Data["address"])
+		joinAddress = fmt.Sprintf("https://%v:2379", initMachineAddress)
+	}
 
 	joinInput := userdata.EtcdPlaneJoinInput{
 		BaseUserData: userdata.BaseUserData{
