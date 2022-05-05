@@ -4,4 +4,10 @@ resources:
 - group: bootstrap
   kind: EtcdadmConfig
   version: v1alpha4
+- group: bootstrap
+  kind: EtcdadmConfig
+  version: v1alpha3
+- group: bootstrap
+  kind: EtcdadmConfig
+  version: v1beta1
 version: "2"

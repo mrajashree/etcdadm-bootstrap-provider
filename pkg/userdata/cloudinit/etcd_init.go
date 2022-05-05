@@ -17,8 +17,9 @@ limitations under the License.
 package cloudinit
 
 import (
-	"fmt"
-	"sigs.k8s.io/cluster-api/util/secret"
+	etcdbootstrapv1 "github.com/mrajashree/etcdadm-bootstrap-provider/api/v1beta1"
+	"github.com/mrajashree/etcdadm-bootstrap-provider/pkg/userdata"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -40,33 +41,24 @@ runcmd:
 `
 )
 
-// ControlPlaneInput defines the context to generate a controlplane instance user data.
-type EtcdPlaneInput struct {
-	BaseUserData
-	secret.Certificates
-
-	EtcdadmInitCommand string
-	Version            string
-}
-
-// NewInitControlPlane returns the user data string to be used on a controlplane instance.
-func NewInitEtcdPlane(input *EtcdPlaneInput) ([]byte, error) {
-	input.Header = cloudConfigHeader
+// NewInitEtcdPlane returns the user data string to be used on a etcd instance.
+func NewInitEtcdPlane(input *userdata.EtcdPlaneInput, config etcdbootstrapv1.EtcdadmConfigSpec) ([]byte, error) {
 	input.WriteFiles = input.Certificates.AsFiles()
-	input.WriteFiles = append(input.WriteFiles, input.AdditionalFiles...)
-	input.SentinelFileCommand = sentinelFileCommand
-	input.EtcdadmInitCommand = addEtcdadmInitFlags(input, standardInitCommand)
-	userData, err := generate("InitEtcdplane", etcdPlaneCloudInit, input)
-	if err != nil {
+	input.EtcdadmArgs = buildEtcdadmArgs(config)
+	input.EtcdadmInitCommand = userdata.AddSystemdArgsToCommand(standardInitCommand, &input.EtcdadmArgs)
+	if err := setProxy(config.Proxy, &input.BaseUserData); err != nil {
 		return nil, err
+	}
+	if err := setRegistryMirror(config.RegistryMirror, &input.BaseUserData); err != nil {
+		return nil, err
+	}
+	if err := prepare(&input.BaseUserData); err != nil {
+		return nil, err
+	}
+	userData, err := generate("InitEtcdCluster", etcdPlaneCloudInit, input)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to generate user data for machine initializing etcd cluster")
 	}
 
 	return userData, nil
-}
-
-func addEtcdadmInitFlags(input *EtcdPlaneInput, cmd string) string {
-	if input.Version != "" {
-		cmd += fmt.Sprintf(" --version %s", input.Version)
-	}
-	return cmd
 }

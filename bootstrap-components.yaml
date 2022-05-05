@@ -1,0 +1,444 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    control-plane: controller-manager
+  name: etcdadm-bootstrap-provider-system
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.2.9
+  creationTimestamp: null
+  labels:
+    cluster.x-k8s.io/v1alpha3: v1alpha3
+    cluster.x-k8s.io/v1alpha4: v1alpha4
+  name: etcdadmconfigs.bootstrap.cluster.x-k8s.io
+spec:
+  group: bootstrap.cluster.x-k8s.io
+  names:
+    kind: EtcdadmConfig
+    listKind: EtcdadmConfigList
+    plural: etcdadmconfigs
+    singular: etcdadmconfig
+  scope: Namespaced
+  versions:
+  - name: v1alpha3
+    schema:
+      openAPIV3Schema:
+        description: EtcdadmConfig is the Schema for the etcdadmconfigs API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: EtcdadmConfigSpec defines the desired state of EtcdadmConfig
+            properties:
+              bottlerocketConfig:
+                description: BottlerocketConfig specifies the configuration for the
+                  bottlerocket bootstrap data
+                properties:
+                  bootstrapImage:
+                    description: BootstrapImage specifies the container image to use
+                      for bottlerocket's bootstrapping
+                    type: string
+                  etcdImage:
+                    description: EtcdImage specifies the etcd image to use by etcdadm
+                    type: string
+                required:
+                - bootstrapImage
+                type: object
+              cloudInitConfig:
+                description: CloudInitConfig specifies the configuration for the cloud-init
+                  bootstrap data
+                properties:
+                  etcdReleaseURL:
+                    description: EtcdReleaseURL is an optional field to specify where
+                      etcdadm can download etcd from
+                    type: string
+                  installDir:
+                    description: InstallDir is an optional field to specify where
+                      etcdadm will extract etcd binaries to
+                    type: string
+                  version:
+                    type: string
+                type: object
+              etcdadmBuiltin:
+                type: boolean
+              etcdadmInstallCommands:
+                items:
+                  type: string
+                type: array
+              format:
+                description: Format specifies the output format of the bootstrap data
+                enum:
+                - cloud-config
+                - bottlerocket
+                type: string
+              postEtcdadmCommands:
+                description: PostEtcdadmCommands specifies extra commands to run after
+                  kubeadm runs
+                items:
+                  type: string
+                type: array
+              preEtcdadmCommands:
+                description: PreEtcdadmCommands specifies extra commands to run before
+                  kubeadm runs
+                items:
+                  type: string
+                type: array
+              users:
+                description: Users specifies extra users to add
+                items:
+                  description: User defines the input for a generated user in cloud-init.
+                  properties:
+                    gecos:
+                      description: Gecos specifies the gecos to use for the user
+                      type: string
+                    groups:
+                      description: Groups specifies the additional groups for the
+                        user
+                      type: string
+                    homeDir:
+                      description: HomeDir specifies the home directory to use for
+                        the user
+                      type: string
+                    inactive:
+                      description: Inactive specifies whether to mark the user as
+                        inactive
+                      type: boolean
+                    lockPassword:
+                      description: LockPassword specifies if password login should
+                        be disabled
+                      type: boolean
+                    name:
+                      description: Name specifies the user name
+                      type: string
+                    passwd:
+                      description: Passwd specifies a hashed password for the user
+                      type: string
+                    primaryGroup:
+                      description: PrimaryGroup specifies the primary group for the
+                        user
+                      type: string
+                    shell:
+                      description: Shell specifies the user's shell
+                      type: string
+                    sshAuthorizedKeys:
+                      description: SSHAuthorizedKeys specifies a list of ssh authorized
+                        keys for the user
+                      items:
+                        type: string
+                      type: array
+                    sudo:
+                      description: Sudo specifies a sudo role for the user
+                      type: string
+                  required:
+                  - name
+                  type: object
+                type: array
+            type: object
+          status:
+            description: EtcdadmConfigStatus defines the observed state of EtcdadmConfig
+            properties:
+              conditions:
+                description: Conditions defines current service state of the KubeadmConfig.
+                items:
+                  description: Condition defines an observation of a Cluster API resource
+                    operational state.
+                  properties:
+                    lastTransitionTime:
+                      description: Last time the condition transitioned from one status
+                        to another. This should be when the underlying condition changed.
+                        If that is not known, then using the time when the API field
+                        changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A human readable message indicating details about
+                        the transition. This field may be empty.
+                      type: string
+                    reason:
+                      description: The reason for the condition's last transition
+                        in CamelCase. The specific API may choose whether or not this
+                        field is considered a guaranteed API. This field may not be
+                        empty.
+                      type: string
+                    severity:
+                      description: Severity provides an explicit classification of
+                        Reason code, so the users or machines can immediately understand
+                        the current situation and act accordingly. The Severity field
+                        MUST be set only when Status=False.
+                      type: string
+                    status:
+                      description: Status of the condition, one of True, False, Unknown.
+                      type: string
+                    type:
+                      description: Type of condition in CamelCase or in foo.example.com/CamelCase.
+                        Many .condition.type values are consistent across resources
+                        like Available, but because arbitrary conditions can be useful
+                        (see .node.status.conditions), the ability to deconflict is
+                        important.
+                      type: string
+                  required:
+                  - status
+                  - type
+                  type: object
+                type: array
+              dataSecretName:
+                type: string
+              ready:
+                type: boolean
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: etcdadm-bootstrap-provider-manager
+  namespace: etcdadm-bootstrap-provider-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: etcdadm-bootstrap-provider-leader-election-role
+  namespace: etcdadm-bootstrap-provider-system
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - configmaps/status
+  verbs:
+  - get
+  - update
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: etcdadm-bootstrap-provider-manager-role
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - events
+  - secrets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - bootstrap.cluster.x-k8s.io
+  resources:
+  - etcdadmconfigs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - bootstrap.cluster.x-k8s.io
+  resources:
+  - etcdadmconfigs/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - cluster.x-k8s.io
+  resources:
+  - clusters
+  - clusters/status
+  - machines
+  - machines/status
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: etcdadm-bootstrap-provider-proxy-role
+rules:
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: etcdadm-bootstrap-provider-metrics-reader
+rules:
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: etcdadm-bootstrap-provider-leader-election-rolebinding
+  namespace: etcdadm-bootstrap-provider-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: etcdadm-bootstrap-provider-leader-election-role
+subjects:
+- kind: ServiceAccount
+  name: etcdadm-bootstrap-provider-manager
+  namespace: etcdadm-bootstrap-provider-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: etcdadm-bootstrap-provider-manager-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: etcdadm-bootstrap-provider-manager-role
+subjects:
+- kind: ServiceAccount
+  name: etcdadm-bootstrap-provider-manager
+  namespace: etcdadm-bootstrap-provider-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: etcdadm-bootstrap-provider-proxy-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: etcdadm-bootstrap-provider-proxy-role
+subjects:
+- kind: ServiceAccount
+  name: etcdadm-bootstrap-provider-manager
+  namespace: etcdadm-bootstrap-provider-system
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    control-plane: controller-manager
+  name: etcdadm-bootstrap-provider-controller-manager-metrics-service
+  namespace: etcdadm-bootstrap-provider-system
+spec:
+  ports:
+  - name: https
+    port: 8443
+    targetPort: https
+  selector:
+    control-plane: controller-manager
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    control-plane: controller-manager
+  name: etcdadm-bootstrap-provider-controller-manager
+  namespace: etcdadm-bootstrap-provider-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  template:
+    metadata:
+      labels:
+        control-plane: controller-manager
+    spec:
+      containers:
+      - args:
+        - --secure-listen-address=0.0.0.0:8443
+        - --upstream=http://127.0.0.1:8080/
+        - --logtostderr=true
+        - --v=10
+        image: gcr.io/kubebuilder/kube-rbac-proxy:v0.5.0
+        name: kube-rbac-proxy
+        ports:
+        - containerPort: 8443
+          name: https
+      - args:
+        - --metrics-addr=127.0.0.1:8080
+        - --enable-leader-election
+        command:
+        - /manager
+        image: public.ecr.aws/l3b5s0b8/mrajashree/etcdadm-bootstrap-provider:latest
+        name: manager
+        resources:
+          limits:
+            cpu: 100m
+            memory: 30Mi
+          requests:
+            cpu: 100m
+            memory: 20Mi
+      serviceAccountName: etcdadm-bootstrap-provider-manager
+      terminationGracePeriodSeconds: 10

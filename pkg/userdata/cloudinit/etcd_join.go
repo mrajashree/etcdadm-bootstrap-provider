@@ -2,8 +2,10 @@ package cloudinit
 
 import (
 	"fmt"
+
+	etcdbootstrapv1 "github.com/mrajashree/etcdadm-bootstrap-provider/api/v1beta1"
+	"github.com/mrajashree/etcdadm-bootstrap-provider/pkg/userdata"
 	"github.com/pkg/errors"
-	"sigs.k8s.io/cluster-api/util/secret"
 )
 
 const (
@@ -25,35 +27,24 @@ runcmd:
 `
 )
 
-// EtcdPlaneJoinInput defines context to generate etcd instance user data for etcd plane node join.
-type EtcdPlaneJoinInput struct {
-	BaseUserData
-	secret.Certificates
-
-	EtcdadmJoinCommand string
-	JoinAddress        string
-	Version            string
-}
-
 // NewJoinControlPlane returns the user data string to be used on a new control plane instance.
-func NewJoinEtcdPlane(input *EtcdPlaneJoinInput) ([]byte, error) {
+func NewJoinEtcdPlane(input *userdata.EtcdPlaneJoinInput, config etcdbootstrapv1.EtcdadmConfigSpec) ([]byte, error) {
 	input.WriteFiles = input.Certificates.AsFiles()
-	input.ControlPlane = true
-	input.EtcdadmJoinCommand = addEtcdadmJoinFlags(input, fmt.Sprintf(standardJoinCommand, input.JoinAddress))
-	if err := input.prepare(); err != nil {
+	input.EtcdadmArgs = buildEtcdadmArgs(config)
+	input.EtcdadmJoinCommand = userdata.AddSystemdArgsToCommand(fmt.Sprintf(standardJoinCommand, input.JoinAddress), &input.EtcdadmArgs)
+	if err := setProxy(config.Proxy, &input.BaseUserData); err != nil {
 		return nil, err
 	}
-	userData, err := generate("JoinControlplane", etcdPlaneJoinCloudInit, input)
+	if err := setRegistryMirror(config.RegistryMirror, &input.BaseUserData); err != nil {
+		return nil, err
+	}
+	if err := prepare(&input.BaseUserData); err != nil {
+		return nil, err
+	}
+	userData, err := generate("JoinEtcdCluster", etcdPlaneJoinCloudInit, input)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to generate user data for machine joining control plane")
+		return nil, errors.Wrapf(err, "failed to generate user data for machine joining etcd cluster")
 	}
 
 	return userData, err
-}
-
-func addEtcdadmJoinFlags(input *EtcdPlaneJoinInput, cmd string) string {
-	if input.Version != "" {
-		cmd += fmt.Sprintf(" --version %s", input.Version)
-	}
-	return cmd
 }
