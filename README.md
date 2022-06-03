@@ -1,3 +1,5 @@
+# No longer maintained
+
 ## Bootstrap provider for creating an etcd cluster using etcdadm
 
 ### Using this with CAPI+CAPD:
